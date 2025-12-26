@@ -1,0 +1,109 @@
+.music-home-container {
+    min-height: 100vh;
+    width: 100vw;
+    background-color: #f4f7f6; 
+    font-family: 'Segoe UI', sans-serif;
+}
+
+.music-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 60px;
+    background: white;
+    box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+}
+
+.music-logout-btn {
+    background: #1a1614;
+    color: white;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: 0.3s;
+}
+
+.music-logout-btn:hover {
+    background: #ff4e00;
+}
+
+.music-home-content {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 60px 20px;
+}
+
+.music-welcome-header {
+    text-align: center;
+    margin-bottom: 50px;
+}
+
+.music-welcome-header h1 {
+    font-size: 2.8rem;
+    color: #1a1614;
+    margin-bottom: 10px;
+}
+
+.music-welcome-header p {
+    color: #666;
+    font-size: 1.1rem;
+}
+
+/* Grid for Navigation Cards */
+.music-hub-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 30px;
+}
+
+.music-card {
+    background: white;
+    padding: 40px;
+    border-radius: 30px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    border: 1px solid transparent;
+}
+
+.music-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    border-color: #ff4e00;
+}
+
+.music-card-icon {
+    font-size: 3rem;
+    margin-bottom: 20px;
+}
+
+.music-card h3 {
+    font-size: 1.5rem;
+    color: #1a1614;
+    margin-bottom: 15px;
+}
+
+.music-card p {
+    color: #888;
+    font-size: 0.95rem;
+    margin-bottom: 25px;
+    line-height: 1.5;
+}
+
+.music-card-btn {
+    background: #f0f0f0;
+    border: none;
+    padding: 10px 25px;
+    border-radius: 20px;
+    font-weight: 600;
+    color: #333;
+    transition: 0.3s;
+}
+
+.music-card:hover .music-card-btn {
+    background: linear-gradient(90deg, #ff4e00, #ec008c);
+    color: white;
+}

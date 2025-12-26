@@ -1,0 +1,77 @@
+.music-container {
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+    background-color: #1a1614;
+    overflow: hidden;
+    margin: 0;
+}
+
+.music-left {
+    flex: 1;
+    /* This makes the image fill the entire panel perfectly */
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Optional: Adds a subtle dark tint so the text is easier to read over the image */
+.music-overlay {
+    background: linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0) 50%);
+    height: 100%;
+    width: 100%;
+    padding: 60px;
+    box-sizing: border-box;
+}
+
+.music-tagline { font-size: 0.9rem; color: white; opacity: 0.8; margin-bottom: 10px; }
+.music-left h1 { font-size: 3.5rem; line-height: 1.1; margin: 0; color: white; font-weight: 700; }
+
+.music-right {
+    flex: 1.2;
+    background-color: #ffffff;
+    border-top-left-radius: 50px;
+    border-bottom-left-radius: 50px;
+    display: flex;
+    flex-direction: column;
+    padding: 50px;
+    position: relative;
+    z-index: 2; /* Ensures the white panel shadow overlaps the image */
+    box-shadow: -10px 0 30px rgba(0,0,0,0.2);
+}
+
+.music-top-nav { display: flex; justify-content: space-between; align-items: center; }
+.music-logo { font-weight: bold; font-size: 1.5rem; color: #1a1614; }
+.music-signup-btn { color: #1a1614; text-decoration: none; font-weight: 600; border: 1px solid #ccc; padding: 8px 20px; border-radius: 20px; }
+
+.music-form-box { margin: auto; width: 100%; max-width: 400px; }
+.music-form-box h2 { font-size: 2.2rem; margin-bottom: 30px; color: #1a1614; }
+
+.music-input-group { margin-bottom: 15px; }
+.music-input-group input {
+    width: 100%;
+    padding: 16px 25px;
+    border-radius: 30px;
+    border: 1px solid #ddd;
+    font-size: 1rem;
+    outline: none;
+}
+
+.music-links-row { margin: 10px 0 25px 15px; }
+.music-links-row a { color: #ff4e00; text-decoration: none; font-weight: 600; font-size: 0.9rem; }
+
+.music-main-btn {
+    width: 100%;
+    padding: 16px;
+    border-radius: 30px;
+    border: none;
+    background: linear-gradient(90deg, #ff4e00 0%, #ec008c 100%);
+    color: white;
+    font-weight: bold;
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+.music-footer { position: absolute; bottom: 30px; left: 50px; font-size: 0.8rem; color: #999; }

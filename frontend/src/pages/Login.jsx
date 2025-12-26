@@ -1,0 +1,60 @@
+import { useState } from "react";
+import axios from "axios";
+import { Link, useNavigate } from "react-router-dom"; 
+import "../styles/Login.css";
+import loginMockup from "../images/Login.jpg"; 
+
+export default function Login() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const navigate = useNavigate(); 
+
+  const submit = async () => {
+    try {
+      const res = await axios.post("http://127.0.0.1:5000/login", { email, password });
+      if (res.status === 200) navigate("/home"); 
+    } catch (err) {
+      alert(err.response?.data?.error || "Login Failed");
+    }
+  };
+
+  return (
+    <div className="music-container">
+      {/* LEFT SIDE: Image applied as a background style here */}
+      <div 
+        className="music-left" 
+        style={{ backgroundImage: `url(${loginMockup})` }}
+      >
+        <div className="music-overlay">
+          <div className="music-left-content">
+            <p className="music-tagline">Music for every mood – global solutions for your vibes.</p>
+            <h1>Manage <br/> your moods</h1>
+          </div>
+        </div>
+      </div>
+
+      {/* RIGHT SIDE: Form remains the same */}
+      <div className="music-right">
+        <div className="music-top-nav">
+           <div className="music-logo">Moodify</div>
+           <Link to="/register" className="music-signup-btn">Sign Up</Link>
+        </div>
+
+        <div className="music-form-box">
+          <h2>Sign In</h2>
+          <div className="music-input-group">
+            <input type="email" placeholder="Email or Username" onChange={e => setEmail(e.target.value)} />
+          </div>
+          <div className="music-input-group">
+            <input type="password" placeholder="Password" onChange={e => setPassword(e.target.value)} />
+          </div>
+          <div className="music-links-row">
+            <Link to="/forgot-password">Forgot password?</Link>
+          </div>
+          <button className="music-main-btn" onClick={submit}>Sign In</button>
+        </div>
+        <p className="music-footer">© 2025 Moodify Inc. | Contact Us</p>
+      </div>
+    </div>
+  );
+}

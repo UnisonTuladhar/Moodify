@@ -1,0 +1,11 @@
+/* This imports all the styling you already have in Login.css */
+@import "./Login.css";
+
+.music-back-link {
+    text-align: center;
+    margin-top: 20px;
+    color: #ff4e00;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
