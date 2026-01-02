@@ -29,11 +29,16 @@ export default function Register() {
 
   return (
     <div className="music-container">
-      {/* Left Side */}
-      <div className="music-left">
-        <div className="music-content">
-          <p className="music-tagline">Start your journey with us.</p>
-          <h1>Create <br/> Your Account</h1>
+      {/* Left Side with Background Image Path */}
+      <div 
+        className="music-left" 
+        style={{ backgroundImage: `url(${require("../images/Login.jpg")})` }}
+      >
+        <div className="music-overlay">
+          <div className="music-content">
+            <p className="music-tagline">Start your journey with us.</p>
+            <h1>Create <br/> Your Account</h1>
+          </div>
         </div>
       </div>
 
@@ -48,15 +53,27 @@ export default function Register() {
           <h2>{step === 1 ? "Sign Up" : "Verification"}</h2>
           {step === 1 ? (
             <>
-              <div className="music-input-group"><input placeholder="Username" onChange={e => setUsername(e.target.value)} /></div>
-              <div className="music-input-group"><input placeholder="Email" onChange={e => setEmail(e.target.value)} /></div>
-              <div className="music-input-group"><input type="password" placeholder="Password" onChange={e => setPassword(e.target.value)} /></div>
+              <div className="music-input-group">
+                <input placeholder="Username" onChange={e => setUsername(e.target.value)} />
+              </div>
+              <div className="music-input-group">
+                <input placeholder="Email" onChange={e => setEmail(e.target.value)} />
+              </div>
+              <div className="music-input-group">
+                <input type="password" placeholder="Password" onChange={e => setPassword(e.target.value)} />
+              </div>
               <button className="music-main-btn" onClick={requestOtp}>Register Now</button>
             </>
           ) : (
             <>
               <p style={{marginBottom: '20px', color: '#555'}}>Code sent to {email}</p>
-              <div className="music-input-group"><input placeholder="Enter OTP" onChange={e => setOtp(e.target.value)} /></div>
+              <div className="music-input-group">
+                <input 
+                  placeholder="Enter OTP" 
+                  value={otp} // Keeps the box empty and follows logic
+                  onChange={e => setOtp(e.target.value)} 
+                />
+              </div>
               <button className="music-main-btn" onClick={verifyAndRegister}>Verify Account</button>
               <p className="music-back-link" onClick={() => setStep(1)}>Go back</p>
             </>

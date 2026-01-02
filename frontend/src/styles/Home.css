@@ -107,3 +107,39 @@
     background: linear-gradient(90deg, #ff4e00, #ec008c);
     color: white;
 }
+
+.camera-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 40px;
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+.camera-box {
+    border: 5px solid white;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    overflow: hidden;
+    background: #000;
+    width: 100%;
+    max-width: 500px;
+}
+
+.live-video {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.camera-hint {
+    margin-top: 10px;
+    color: #ff4e00;
+    font-weight: 600;
+    font-style: italic;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}

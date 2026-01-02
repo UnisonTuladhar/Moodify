@@ -2,7 +2,6 @@ import { useState } from "react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom"; 
 import "../styles/Login.css";
-import loginMockup from "../images/Login.jpg"; 
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -10,21 +9,34 @@ export default function Login() {
   const navigate = useNavigate(); 
 
   const submit = async () => {
-    try {
-      const res = await axios.post("http://127.0.0.1:5000/login", { email, password });
-      if (res.status === 200) navigate("/home"); 
-    } catch (err) {
-      alert(err.response?.data?.error || "Login Failed");
+  try {
+    const res = await axios.post("http://127.0.0.1:5000/login", { email, password });
+    if (res.status === 200) {
+      localStorage.setItem("username", res.data.username);
+      localStorage.setItem("email", res.data.email);
+      localStorage.setItem("is_admin", res.data.is_admin); 
+      
+      // REDIRECTION LOGIC
+      if (res.data.is_admin === 1) {
+        navigate("/admin-home"); 
+      } else {
+        navigate("/home");
+      }
     }
-  };
+  } catch (err) {
+    alert(err.response?.data?.error || "Login Failed");
+  }
+};
 
   return (
     <div className="music-container">
       {/* LEFT SIDE: Image applied as a background style here */}
       <div 
-        className="music-left" 
-        style={{ backgroundImage: `url(${loginMockup})` }}
-      >
+      className="music-left" 
+      style={{ 
+        backgroundImage: `url(${require("../images/Login.jpg")})` 
+      }}
+>
         <div className="music-overlay">
           <div className="music-left-content">
             <p className="music-tagline">Music for every mood – global solutions for your vibes.</p>

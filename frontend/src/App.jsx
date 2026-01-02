@@ -5,6 +5,7 @@ import Home from "./pages/Home";
 import ForgotPassword from "./pages/ForgotPassword"; 
 import Dashboard from "./pages/Dashboard"; 
 import Settings from "./pages/Settings"; 
+import AdminHome from "./pages/AdminHome";
 
 export default function App() {
   return (
@@ -17,6 +18,7 @@ export default function App() {
         <Route path="/home" element={<Home />} /> 
         <Route path="/dashboard" element={<Dashboard />} /> 
         <Route path="/settings" element={<Settings />} />  
+        <Route path="/admin-home" element={<AdminHome />} />
       </Routes>
     </BrowserRouter>
   );

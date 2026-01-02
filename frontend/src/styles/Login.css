@@ -32,8 +32,8 @@
 .music-right {
     flex: 1.2;
     background-color: #ffffff;
-    border-top-left-radius: 50px;
-    border-bottom-left-radius: 50px;
+    border-top-left-radius: 0px;
+    border-bottom-left-radius: 0px;
     display: flex;
     flex-direction: column;
     padding: 50px;
