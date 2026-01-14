@@ -6,6 +6,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import Dashboard from "./pages/Dashboard"; 
 import Settings from "./pages/Settings"; 
 import AdminHome from "./pages/AdminHome";
+import UserManagement from "./pages/UserManagement";
 
 export default function App() {
   return (
@@ -19,6 +20,7 @@ export default function App() {
         <Route path="/dashboard" element={<Dashboard />} /> 
         <Route path="/settings" element={<Settings />} />  
         <Route path="/admin-home" element={<AdminHome />} />
+        <Route path="/manage-users" element={<UserManagement />} />
       </Routes>
     </BrowserRouter>
   );

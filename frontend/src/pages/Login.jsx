@@ -44,8 +44,8 @@ export default function Login() {
           </div>
         </div>
       </div>
-
-      {/* RIGHT SIDE: Form remains the same */}
+      
+      {/* RIGHT SIDE: Login Form */}
       <div className="music-right">
         <div className="music-top-nav">
            <div className="music-logo">Moodify</div>
