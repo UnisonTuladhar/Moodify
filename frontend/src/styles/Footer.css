@@ -1,0 +1,135 @@
+/* Moodify Global Footer Styles */
+.spotify-footer {
+    background-color: #000000;
+    color: white;
+    padding: 80px 0 40px 0;
+    font-family: 'Segoe UI', sans-serif;
+    margin-top: 100px; 
+    width: 100%;
+}
+
+.footer-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.footer-columns {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    margin-bottom: 50px;
+}
+
+.footer-col {
+    flex: 1;
+    min-width: 150px;
+    margin-bottom: 30px;
+}
+
+.brand-col {
+    flex: 1.5;
+}
+
+.footer-logo {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: white;
+    letter-spacing: -1px;
+}
+
+.footer-col h4 {
+    color: #919496; 
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 1.2px;
+    margin-bottom: 20px;
+}
+
+.footer-col ul {
+    list-style: none;
+    padding: 0;
+}
+
+.footer-col ul li {
+    margin-bottom: 15px;
+    font-size: 1rem;
+    color: white;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.footer-col ul li:hover {
+    color: #ff4e00; 
+}
+
+/* Social Icons Section */
+.social-col {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+}
+
+.social-icon {
+    width: 45px;
+    height: 45px;
+    background-color: #292929;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: 0.3s;
+    color: white;
+}
+
+.social-icon:hover {
+    background-color: #555;
+}
+
+/* Footer Bottom Bar */
+.footer-bottom {
+    border-top: 1px solid #292929;
+    padding-top: 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.footer-legal {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.footer-legal span {
+    color: #919496;
+    font-size: 0.75rem;
+    cursor: pointer;
+}
+
+.footer-legal span:hover {
+    color: white;
+}
+
+.footer-copyright {
+    color: #919496;
+    font-size: 0.75rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .footer-columns {
+        flex-direction: column;
+    }
+    .social-col {
+        justify-content: flex-start;
+        margin-top: 20px;
+    }
+    .footer-bottom {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 20px;
+    }
+}

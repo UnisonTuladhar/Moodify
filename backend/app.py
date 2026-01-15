@@ -1,8 +1,9 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response 
 from flask_cors import CORS
 from config import get_db_connection
 import hashlib
 import random
+import cv2 
 from flask_mail import Mail, Message 
 
 app = Flask(__name__)
@@ -17,6 +18,36 @@ app.config['MAIL_USE_TLS'] = False
 app.config['MAIL_USE_SSL'] = True
 
 mail = Mail(app)
+
+# CAMERA Integration
+
+class VideoCamera:
+    def __init__(self):
+        self.video = cv2.VideoCapture(0)
+
+    def __del__(self):
+        self.video.release()
+
+    def get_frame(self):
+        success, image = self.video.read()
+        if not success:
+            return None
+        ret, jpeg = cv2.imencode('.jpg', image)
+        return jpeg.tobytes()
+
+def gen(camera):
+    while True:
+        frame = camera.get_frame()
+        if frame is not None:
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
+        else:
+            break
+
+@app.route('/video_feed')
+def video_feed():
+    return Response(gen(VideoCamera()),
+                    mimetype='multipart/x-mixed-replace; boundary=frame')
 
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
@@ -90,13 +121,18 @@ def login():
     password = hash_password(data["password"])
 
     db = get_db_connection()
-    cursor = db.cursor()
+    cursor = db.cursor(dictionary=True)
 
-    cursor.execute("SELECT * FROM users WHERE email=%s AND password=%s", (email, password))
+    cursor.execute("SELECT username, email, is_admin FROM users WHERE email=%s AND password=%s", (email, password))
     user = cursor.fetchone()
 
     if user:
-        return jsonify({"message": "Login successful!"}), 200
+        return jsonify({
+            "message": "Login successful!",
+            "username": user["username"],
+            "email": user["email"],
+            "is_admin": user["is_admin"] # 1 for admin, 0 for user
+        }), 200
     else:
         return jsonify({"error": "Invalid email or password!"}), 401
 
@@ -146,5 +182,5 @@ def reset_password():
     else:
         return jsonify({"error": "Invalid OTP!"}), 400
 
-app.run(debug=True)
-
+if __name__ == "__main__":
+    app.run(debug=True)

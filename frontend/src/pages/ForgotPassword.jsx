@@ -26,10 +26,15 @@ export default function ForgotPassword() {
 
   return (
     <div className="music-container">
-      {/* Left Side */}
-      <div className="music-left">
-        <div className="music-content">
-          <h1>Recover <br/> your access</h1>
+      {/* Left Side with Background Image Path */}
+      <div 
+        className="music-left" 
+        style={{ backgroundImage: `url(${require("../images/Login.jpg")})` }}
+      >
+        <div className="music-overlay">
+          <div className="music-content">
+            <h1>Recover <br/> your access</h1>
+          </div>
         </div>
       </div>
 
@@ -44,13 +49,23 @@ export default function ForgotPassword() {
           <h2>Reset Password</h2>
           {step === 1 ? (
             <>
-              <div className="music-input-group"><input placeholder="Email Address" onChange={e => setEmail(e.target.value)} /></div>
+              <div className="music-input-group">
+                <input placeholder="Email Address" onChange={e => setEmail(e.target.value)} />
+              </div>
               <button className="music-main-btn" onClick={sendOtp}>Send OTP Code</button>
             </>
           ) : (
             <>
-              <div className="music-input-group"><input placeholder="OTP Code" onChange={e => setOtp(e.target.value)} /></div>
-              <div className="music-input-group"><input type="password" placeholder="New Password" onChange={e => setNewPassword(e.target.value)} /></div>
+              <div className="music-input-group">
+                <input 
+                  placeholder="OTP Code" 
+                  value={otp} // Added value here to keep box empty initially
+                  onChange={e => setOtp(e.target.value)} 
+                />
+              </div>
+              <div className="music-input-group">
+                <input type="password" placeholder="New Password" onChange={e => setNewPassword(e.target.value)} />
+              </div>
               <button className="music-main-btn" onClick={resetPassword}>Update Password</button>
             </>
           )}
