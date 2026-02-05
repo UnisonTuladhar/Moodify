@@ -30,7 +30,7 @@
 }
 
 .music-home-content {
-    max-width: 1000px;
+    max-width: 1100px; /* Increased slightly for side-by-side layout */
     margin: 0 auto;
     padding: 60px 20px;
 }
@@ -123,7 +123,6 @@
     overflow: hidden;
     background: #000;
     width: 100%;
-    max-width: 900px; 
     transition: all 0.3s ease-in-out;
 }
 
@@ -355,6 +354,128 @@
     color: #999;
     font-size: 0.85rem;
 }
+
+/* --- NEW DETECTION SPLIT LAYOUT STYLES --- */
+
+.detection-layout {
+    display: flex;
+    gap: 40px;
+    align-items: flex-start;
+    justify-content: center;
+    margin-top: 30px;
+    animation: fadeIn 0.8s ease;
+}
+
+.camera-side {
+    flex: 1.5;
+    max-width: 650px;
+    text-align: center;
+}
+
+.results-side {
+    flex: 1;
+    min-width: 300px;
+}
+
+.mood-result-card {
+    background: white;
+    padding: 40px;
+    border-radius: 30px;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+    border: 1px solid #eee;
+    text-align: center;
+}
+
+.live-indicator {
+    color: #e74c3c;
+    font-weight: bold;
+    font-size: 0.9rem;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+}
+
+.final-mood-box {
+    margin-top: 20px;
+    padding: 25px;
+    background: #fbfbfb;
+    border-radius: 20px;
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    border: 1px dashed #ddd;
+}
+
+.detected-mood-text {
+    font-size: 3.2rem;
+    font-weight: 800;
+    margin: 10px 0;
+    background: linear-gradient(90deg, #ff4e00, #ec008c);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* Progress Bar for stability logic */
+.stability-container {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.stability-container p {
+    font-size: 0.9rem;
+    color: #888;
+    margin-bottom: 10px;
+}
+
+.stability-bar-bg {
+    width: 100%;
+    height: 12px;
+    background: #e0e0e0;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.stability-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #2ecc71, #27ae60);
+    transition: width 0.4s ease;
+}
+
+.waiting-text {
+    color: #999;
+    font-style: italic;
+    font-size: 0.95rem;
+}
+
+.recommendation-btn {
+    margin-top: 20px;
+    padding: 15px 30px;
+    border-radius: 30px;
+    border: none;
+    background: #1a1614;
+    color: white;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.3s;
+    width: 100%;
+}
+
+.recommendation-btn:hover {
+    background: #ff4e00;
+    transform: scale(1.02);
+}
+
+@media (max-width: 950px) {
+    .detection-layout {
+        flex-direction: column;
+        align-items: center;
+    }
+    .camera-side, .results-side {
+        width: 100%;
+        max-width: 100%;
+    }
+}
+
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(-10px); }
     to { opacity: 1; transform: translateY(0); }

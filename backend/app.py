@@ -30,6 +30,9 @@ CASCADE_PATH = 'haarcascade_frontalface_default.xml'
 # Dataset folders
 emotion_labels = ['Angry', 'Disgust', 'Fear', 'Happy', 'Neutral', 'Sad', 'Surprise']
 
+# Global variable to track the latest mood for the frontend timer
+last_predicted_mood = "None"
+
 try:
     classifier = load_model(MODEL_PATH)
     face_classifier = cv2.CascadeClassifier(CASCADE_PATH)
@@ -46,6 +49,7 @@ class VideoCamera:
         self.video.release()
 
     def get_frame(self):
+        global last_predicted_mood
         success, frame = self.video.read()
         if not success:
             return None
@@ -54,6 +58,10 @@ class VideoCamera:
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         # Detect faces in the frame
         faces = face_classifier.detectMultiScale(gray, 1.3, 5)
+
+        # If no face is detected, reset the mood tracking
+        if len(faces) == 0:
+            last_predicted_mood = "None"
 
         for (x, y, w, h) in faces:
             # Draw rectangle around the face
@@ -72,6 +80,9 @@ class VideoCamera:
                 # Predict Emotion
                 prediction = classifier.predict(roi)[0]
                 label = emotion_labels[prediction.argmax()]
+                
+                # Update global variable for the 5-second stability check
+                last_predicted_mood = label
                 
                 # Overlay the label on the camera feed
                 label_position = (x, y-10)
@@ -96,6 +107,12 @@ def gen(camera):
 def video_feed():
     return Response(gen(VideoCamera()),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
+
+# NEW ROUTE: Get Current Mood for 5-second logic
+@app.route('/get_mood', methods=['GET'])
+def get_mood():
+    global last_predicted_mood
+    return jsonify({"mood": last_predicted_mood}), 200
 
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()

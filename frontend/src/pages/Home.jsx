@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios"; 
 import "../styles/Home.css";
 import profileImg from "../images/profile.jpg"; 
 import Footer from "./Footer";
@@ -10,10 +11,51 @@ export default function Home() {
   const [userName, setUserName] = useState("User");
   const [showDropdown, setShowDropdown] = useState(false);
 
+  const [liveMood, setLiveMood] = useState("Detecting...");
+  const [confirmedMood, setConfirmedMood] = useState(null);
+  const [stabilityScore, setStabilityScore] = useState(0); // 0 to 5
+  const lastMoodRef = useRef("");
+  const stabilityCountRef = useRef(0);
+
   useEffect(() => {
     const storedName = localStorage.getItem("username");
     if (storedName) setUserName(storedName);
   }, []);
+
+  useEffect(() => {
+    let interval;
+    if (isCamOpen) {
+      interval = setInterval(async () => {
+        try {
+          const res = await axios.get("http://127.0.0.1:5000/get_mood");
+          const mood = res.data.mood;
+          setLiveMood(mood);
+
+          // Logic to check if mood remains same for 5 seconds
+          if (mood !== "None" && mood !== "No Face Found" && mood === lastMoodRef.current) {
+            stabilityCountRef.current += 1;
+          } else {
+            stabilityCountRef.current = 0;
+            lastMoodRef.current = mood;
+          }
+
+          setStabilityScore(stabilityCountRef.current);
+
+          if (stabilityCountRef.current >= 5) {
+            setConfirmedMood(mood);
+          }
+        } catch (err) {
+          console.error("Error fetching mood from backend");
+        }
+      }, 1000);
+    } else {
+      // Reset when camera closes
+      setStabilityScore(0);
+      setConfirmedMood(null);
+      stabilityCountRef.current = 0;
+    }
+    return () => clearInterval(interval);
+  }, [isCamOpen]);
 
   const handleLogout = () => {
     localStorage.clear();
@@ -53,81 +95,37 @@ export default function Home() {
           </p>
           
           <div style={{ marginTop: "30px" }}>
-            {!isCamOpen ? (
-              <button 
-                className="music-main-btn large-btn" 
-                onClick={() => setIsCamOpen(true)}
-              >
-                ✨ Detect My Mood
-              </button>
-            ) : (
-              <button 
-                className="music-logout-btn" 
-                onClick={() => setIsCamOpen(false)}
-              >
-                Close Camera
-              </button>
-            )}
+            {/* Action changed to navigate to separate page */}
+            <button 
+              className="music-main-btn large-btn" 
+              onClick={() => navigate("/detect-mood")}
+            >
+              ✨ Detect My Mood
+            </button>
           </div>
         </header>
 
-        {/* CAMERA DISPLAY AREA */}
-        {isCamOpen && (
-          <div className="camera-section">
-            <div 
-              className="camera-box" 
-              style={{ 
-                minHeight: "500px", 
-                maxWidth: "800px",
-                width: "100%",
-                backgroundColor: "#000", 
-                display: "flex", 
-                justifyContent: "center", 
-                alignItems: "center",
-                borderRadius: "24px",
-                overflow: "hidden",
-                border: "6px solid #fff",
-                boxShadow: "0 20px 50px rgba(0,0,0,0.3)"
-              }}
-            >
-              <img 
-                key={Date.now()}
-                src={`http://127.0.0.1:5000/video_feed?t=${Date.now()}`} 
-                alt="Live Emotion Feed" 
-                style={{ width: "100%", height: "auto", display: "block" }}
-                onError={(e) => {
-                  e.target.src = "https://via.placeholder.com/800x500?text=Camera+Connection+Error";
-                }}
-              />
+        {/* FEATURES SECTION */}
+        <section className="features-section">
+          <h2 className="section-title">How Moodify Works</h2>
+          <div className="features-grid">
+            <div className="feat-card">
+              <div className="feat-icon">📸</div>
+              <h3>Facial Analysis</h3>
+              <p>We use advanced Computer Vision to analyze facial landmarks in real-time.</p>
             </div>
-            <p className="camera-hint">Scanning your face... Stay still for accurate detection.</p>
+            <div className="feat-card">
+              <div className="feat-icon">🧠</div>
+              <h3>AI Detection</h3>
+              <p>Our trained neural network identifies emotions like Happy, Sad, Angry, Neutral, Surprised, Fearful and Disgusted.</p>
+            </div>
+            <div className="feat-card">
+              <div className="feat-icon">🎵</div>
+              <h3>Smart Playlists</h3>
+              <p>Instantly receive music recommendations that match or enhance your current mood.</p>
+            </div>
           </div>
-        )}
-
-        {/* NEW CONTENT AREA: FEATURE CARDS */}
-        {!isCamOpen && (
-          <section className="features-section">
-            <h2 className="section-title">How Moodify Works</h2>
-            <div className="features-grid">
-              <div className="feat-card">
-                <div className="feat-icon">📸</div>
-                <h3>Facial Analysis</h3>
-                <p>We use advanced Computer Vision to analyze facial landmarks in real-time.</p>
-              </div>
-              <div className="feat-card">
-                <div className="feat-icon">🧠</div>
-                <h3>AI Detection</h3>
-                <p>Our trained neural network identifies emotions like Happy, Sad, Angry, Neutral, Surprised, Fearful and Disgusted.</p>
-              </div>
-              <div className="feat-card">
-                <div className="feat-icon">🎵</div>
-                <h3>Smart Playlists</h3>
-                <p>Instantly receive music recommendations that match or enhance your current mood.</p>
-              </div>
-            </div>
-          </section>
-        )}
-        
+        </section>
       </div>
 
        <Footer /> 

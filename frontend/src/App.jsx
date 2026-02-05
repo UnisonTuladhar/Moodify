@@ -7,6 +7,7 @@ import Dashboard from "./pages/Dashboard";
 import Settings from "./pages/Settings"; 
 import AdminHome from "./pages/AdminHome";
 import UserManagement from "./pages/UserManagement";
+import MoodDetection from "./pages/MoodDetection"; 
 
 export default function App() {
   return (
@@ -17,6 +18,7 @@ export default function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} /> 
         <Route path="/home" element={<Home />} /> 
+         <Route path="/detect-mood" element={<MoodDetection />} />
         <Route path="/dashboard" element={<Dashboard />} /> 
         <Route path="/settings" element={<Settings />} />  
         <Route path="/admin-home" element={<AdminHome />} />
