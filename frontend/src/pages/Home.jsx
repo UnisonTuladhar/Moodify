@@ -95,7 +95,7 @@ export default function Home() {
           </p>
           
           <div style={{ marginTop: "30px" }}>
-            {/* Action changed to navigate to separate page */}
+            {/* To navigate to separate page */}
             <button 
               className="music-main-btn large-btn" 
               onClick={() => navigate("/detect-mood")}
@@ -104,6 +104,8 @@ export default function Home() {
             </button>
           </div>
         </header>
+
+        <div className="section-divider"></div>
 
         {/* FEATURES SECTION */}
         <section className="features-section">
@@ -124,6 +126,31 @@ export default function Home() {
               <h3>Smart Playlists</h3>
               <p>Instantly receive music recommendations that match or enhance your current mood.</p>
             </div>
+          </div>
+        </section>
+
+        <div className="section-divider"></div>
+
+
+        {/* MOOD PREVIEW GALLERY */}
+        <section className="mood-gallery">
+          <h2 className="section-title">Explore Your Emotions</h2>
+          <div className="mood-grid">
+            <div className="mood-tile happy">😊 Happy</div>
+            <div className="mood-tile sad">😢 Sad</div>
+            <div className="mood-tile angry">😠 Angry</div>
+            <div className="mood-tile neutral">😐 Neutral</div>
+            <div className="mood-tile surprise">😲 Surprise</div>
+            <div className="mood-tile fear">😨 Fear</div>
+          </div>
+        </section>
+
+        {/* ACTION BANNER */}
+        <section className="cta-banner">
+          <div className="cta-content">
+            <h2>Ready to tune into your feelings?</h2>
+            <p>Join thousands of users discovering music in a whole new way.</p>
+            <button className="cta-btn" onClick={() => navigate("/detect-mood")}>Get Started</button>
           </div>
         </section>
       </div>
