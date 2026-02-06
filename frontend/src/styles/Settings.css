@@ -1,36 +1,128 @@
 
+.settings-page-wrapper {
+    max-width: 1400px !important; 
+    width: 95%;
+    margin: 0 auto;
+    padding: 60px 20px;
+    display: flex;
+    gap: 30px;
+    align-items: flex-start;
+}
+
+/* SIDEBAR  */
 .settings-sidebar {
-    width: 250px;
+    width: 280px; 
+    flex-shrink: 0; 
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 15px;
 }
 
 .sidebar-btn {
     width: 100%;
-    padding: 15px 20px;
+    padding: 18px 25px;
     text-align: left;
     background: white;
     border: 1px solid #eee;
-    border-radius: 12px;
+    border-radius: 15px;
     font-weight: 600;
     cursor: pointer;
     transition: 0.3s;
+    font-size: 1rem;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.03);
 }
 
 .sidebar-btn:hover {
-    background: #f9f9f9;
+    background: #f8f8f8;
+    transform: translateX(5px);
 }
 
 .sidebar-btn.active {
-    background: #8e44ad;
+    background: linear-gradient(135deg, #8e44ad 0%, #3498db 100%);
     color: white;
-    border-color: #8e44ad;
+    border: none;
+    box-shadow: 0 8px 20px rgba(142, 68, 173, 0.3);
 }
 
+/* DELETE ACCOUNT */
 .delete-section {
-    padding: 20px;
+    padding: 30px;
     border: 1px solid #ffebeb;
-    background-color: #fff5f5;
+    background-color: #fffbfb;
+    border-radius: 20px;
+}
+
+/*  CHARTS & HISTORY */
+.history-container {
+    width: 100%;
+    padding: 10px;
+}
+
+.filters-row {
+    display: flex;           
+    align-items: center;     
+    justify-content: flex-start; 
+    gap: 30px;               
+    background: #f8f9fa;
+    padding: 25px;
     border-radius: 15px;
+    border: 1px solid #eee;
+    margin-bottom: 30px;
+    flex-wrap: nowrap;      
+}
+
+.filter-group {
+    display: flex;
+    align-items: center;     
+    gap: 10px;               
+}
+
+.filter-group label {
+    white-space: nowrap;     
+    margin-bottom: 0;        
+    font-weight: 600;
+    color: #555;
+    min-width: fit-content;
+}
+
+.filter-group input,
+.filter-group select {
+    width: 160px;            
+    padding: 10px 15px;
+    margin-bottom: 0 !important; 
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    background: white;
+}
+
+.chart-box {
+    background: #fff;
+    border-radius: 20px;
+    padding: 20px;
+}
+
+table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+th {
+    background: #f4f4f4;
+    color: #555;
+    font-weight: 700;
+}
+
+td, th {
+    padding: 18px 15px !important;
+}
+
+tr:last-child td {
+    border-bottom: none !important;
+}
+
+@media (max-width: 1100px) {
+    .filters-row {
+        flex-wrap: wrap;
+    }
 }

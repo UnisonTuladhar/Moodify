@@ -14,13 +14,30 @@ export default function MoodDetection() {
 
   const [liveMood, setLiveMood] = useState("Detecting...");
   const [confirmedMood, setConfirmedMood] = useState(null);
-  const [stabilityScore, setStabilityScore] = useState(0); // 0 to 5
+  const [stabilityScore, setStabilityScore] = useState(0); 
   const lastMoodRef = useRef("");
   const stabilityCountRef = useRef(0);
+
+  // Get user email for saving history
+  const userEmail = localStorage.getItem("email");
 
   const handleLogout = () => {
     localStorage.clear();
     navigate("/login");
+  };
+
+  // Function to save mood to database
+  const saveMoodToDB = async (mood) => {
+      if (!userEmail) return;
+      try {
+          await axios.post("http://127.0.0.1:5000/save-mood", {
+              email: userEmail,
+              emotion: mood
+          });
+          console.log("Mood saved to history:", mood);
+      } catch (err) {
+          console.error("Failed to save mood history", err);
+      }
   };
 
   useEffect(() => {
@@ -45,6 +62,7 @@ export default function MoodDetection() {
 
           if (stabilityCountRef.current >= 5) {
             setConfirmedMood(mood);
+            saveMoodToDB(mood); 
           }
         } catch (err) {
           console.error("Error fetching mood from backend");

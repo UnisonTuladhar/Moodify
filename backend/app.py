@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify, Response 
 from flask_cors import CORS
 from config import get_db_connection
+from datetime import datetime
 import hashlib
 import random
 import cv2 
@@ -113,6 +114,66 @@ def video_feed():
 def get_mood():
     global last_predicted_mood
     return jsonify({"mood": last_predicted_mood}), 200
+
+# --- SAVE MOOD TO HISTORY ---
+@app.post("/save-mood")
+def save_mood():
+    data = request.json
+    email = data.get("email")
+    emotion = data.get("emotion")
+
+    if not email or not emotion:
+        return jsonify({"error": "Missing data"}), 400
+
+    db = get_db_connection()
+    cursor = db.cursor()
+    try:
+        cursor.execute("INSERT INTO emotion_history (email, emotion) VALUES (%s, %s)", (email, emotion))
+        db.commit()
+        return jsonify({"message": "Mood saved successfully"}), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        db.close()
+
+# --- GET EMOTION HISTORY WITH FILTERS ---
+@app.post("/user/emotion-history")
+def get_emotion_history():
+    data = request.json
+    email = data.get("email")
+    mood_filter = data.get("mood_filter") # Optional
+    start_date = data.get("start_date")   # Optional 'YYYY-MM-DD'
+    end_date = data.get("end_date")       # Optional 'YYYY-MM-DD'
+
+    # Base query
+    query = "SELECT emotion, DATE_FORMAT(detected_at, '%Y-%m-%d %H:%i') as date FROM emotion_history WHERE email=%s"
+    params = [email]
+
+    # Add filters dynamically
+    if mood_filter and mood_filter != "All":
+        query += " AND emotion = %s"
+        params.append(mood_filter)
+    
+    if start_date:
+        query += " AND DATE(detected_at) >= %s"
+        params.append(start_date)
+        
+    if end_date:
+        query += " AND DATE(detected_at) <= %s"
+        params.append(end_date)
+
+    query += " ORDER BY detected_at DESC"
+
+    db = get_db_connection()
+    cursor = db.cursor(dictionary=True)
+    try:
+        cursor.execute(query, tuple(params))
+        history = cursor.fetchall()
+        return jsonify(history), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        db.close()
 
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()

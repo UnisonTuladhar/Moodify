@@ -1,4 +1,3 @@
-
 /* GLOBAL CONTAINER */
 .music-home-container {
     min-height: 100vh;
@@ -39,7 +38,6 @@
     background: #ff4e00;
 }
 
-/* MAIN CONTENT LAYOUT */
 .music-home-content {
     max-width: 1100px;
     margin: 0 auto;
@@ -85,6 +83,40 @@
     box-shadow: 0 10px 30px rgba(0,0,0,0.05);
     border: 1px solid transparent;
     transition: 0.3s;
+    overflow: hidden; 
+}
+
+.music-input-group {
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.music-input-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #333;
+    margin-left: 10px;
+}
+
+.music-input-group input,
+.music-input-group select {
+    width: 100%;
+    padding: 15px 20px;
+    border-radius: 30px;
+    border: 1px solid #ddd;
+    background: #f9f9f9;
+    font-size: 1rem;
+    outline: none;
+    transition: 0.3s;
+    box-sizing: border-box; 
+}
+
+.music-input-group input:focus,
+.music-input-group select:focus {
+    border-color: #8e44ad;
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(142, 68, 173, 0.1);
 }
 
 /* PROFILE & DROPDOWN */
