@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios"; 
-import "../styles/Home.css";
+import "../styles/Shared.css";
+import "../styles/MoodDetection.css";
 import profileImg from "../images/profile.jpg"; 
 import Footer from "./Footer";
 

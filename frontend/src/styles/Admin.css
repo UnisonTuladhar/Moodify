@@ -1,0 +1,37 @@
+.admin-status-label {
+    text-align: center;
+    color: #8e44ad;
+    font-weight: bold;
+    font-size: 0.8rem;
+    letter-spacing: 1.2px;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+}
+
+.music-hub-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 30px;
+}
+
+.music-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    border-color: #ff4e00;
+    cursor: pointer;
+}
+
+.music-card-btn {
+    margin-top: 15px;
+    background: #f0f0f0;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: 0.2s;
+}
+
+.music-card-btn:hover {
+    background: #e0e0e0;
+}

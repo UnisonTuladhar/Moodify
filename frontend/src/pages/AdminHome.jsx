@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import "../styles/Home.css";
+import "../styles/Shared.css";
+import "../styles/Admin.css";
 import profileImg from "../images/profile.jpg"; 
 
 export default function AdminHome() {
@@ -15,10 +16,9 @@ export default function AdminHome() {
 
   return (
     <div className="music-home-container" style={{background: "#f0f2f5"}}>
-      <nav className="music-nav" style={{borderTop: "5px solid #8e44ad"}}>
-        <div className="music-logo">Moodify <span style={{fontSize: "0.8rem", color: "#8e44ad"}}>ADMIN PANEL</span></div>
+      <nav className="music-nav" style={{borderTop: "none"}}>
+        <div className="music-logo">Moodify</div>
         
-        {/* Profile Icon Dropdown */}
         <div className="profile-container">
           <img 
             src={profileImg} 
@@ -36,6 +36,8 @@ export default function AdminHome() {
       </nav>
 
       <div className="music-home-content">
+        <div className="admin-status-label">ADMIN PANEL</div>
+        
         <header className="music-welcome-header">
           <h1>System Overview</h1>
           <p>Welcome back, Admin <strong>{adminName}</strong>.</p>
