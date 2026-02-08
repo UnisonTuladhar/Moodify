@@ -14,7 +14,7 @@ export default function Home() {
 
   const [liveMood, setLiveMood] = useState("Detecting...");
   const [confirmedMood, setConfirmedMood] = useState(null);
-  const [stabilityScore, setStabilityScore] = useState(0); // 0 to 5
+  const [stabilityScore, setStabilityScore] = useState(0); 
   const lastMoodRef = useRef("");
   const stabilityCountRef = useRef(0);
 
@@ -24,39 +24,7 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    let interval;
-    if (isCamOpen) {
-      interval = setInterval(async () => {
-        try {
-          const res = await axios.get("http://127.0.0.1:5000/get_mood");
-          const mood = res.data.mood;
-          setLiveMood(mood);
-
-          // Logic to check if mood remains same for 5 seconds
-          if (mood !== "None" && mood !== "No Face Found" && mood === lastMoodRef.current) {
-            stabilityCountRef.current += 1;
-          } else {
-            stabilityCountRef.current = 0;
-            lastMoodRef.current = mood;
-          }
-
-          setStabilityScore(stabilityCountRef.current);
-
-          if (stabilityCountRef.current >= 5) {
-            setConfirmedMood(mood);
-          }
-        } catch (err) {
-          console.error("Error fetching mood from backend");
-        }
-      }, 1000);
-    } else {
-      // Reset when camera closes
-      setStabilityScore(0);
-      setConfirmedMood(null);
-      stabilityCountRef.current = 0;
-    }
-    return () => clearInterval(interval);
-  }, [isCamOpen]);
+  }, []);
 
   const handleLogout = () => {
     localStorage.clear();
@@ -78,6 +46,7 @@ export default function Home() {
           />
           {showDropdown && (
             <div className="profile-dropdown">
+              <p onClick={() => navigate("/dashboard")}>Dashboard</p>
               <p onClick={() => navigate("/settings")}>Settings</p>
               <p onClick={handleLogout} className="dropdown-logout">Logout</p>
             </div>
@@ -86,7 +55,6 @@ export default function Home() {
       </nav>
       
       <div className="music-home-content">
-        {/* HERO SECTION */}
         <header className="music-welcome-header">
           <div className="hero-badge">AI Powered Emotion Recognition</div>
           <h1>Welcome back, <span className="highlight-text">{userName}</span>!</h1>
@@ -96,7 +64,6 @@ export default function Home() {
           </p>
           
           <div style={{ marginTop: "30px" }}>
-            {/* To navigate to separate page */}
             <button 
               className="music-main-btn large-btn" 
               onClick={() => navigate("/detect-mood")}

@@ -26,7 +26,7 @@ export default function MoodDetection() {
     navigate("/login");
   };
 
-  // Function to save mood to database
+  // Save mood to database
   const saveMoodToDB = async (mood) => {
       if (!userEmail) return;
       try {
@@ -50,7 +50,7 @@ export default function MoodDetection() {
           const mood = res.data.mood;
           setLiveMood(mood);
 
-          // if mood remains same for 5 seconds
+          // Mood check for 3 seconds
           if (mood !== "None" && mood !== "No Face Found" && mood === lastMoodRef.current) {
             stabilityCountRef.current += 1;
           } else {
@@ -60,7 +60,7 @@ export default function MoodDetection() {
 
           setStabilityScore(stabilityCountRef.current);
 
-          if (stabilityCountRef.current >= 5) {
+          if (stabilityCountRef.current >= 3) {
             setConfirmedMood(mood);
             saveMoodToDB(mood); 
           }
@@ -95,6 +95,8 @@ export default function MoodDetection() {
           />
           {showDropdown && (
             <div className="profile-dropdown">
+               <p onClick={() => navigate("/home")}>Home</p>
+               <p onClick={() => navigate("/dashboard")}>Dashboard</p>
               <p onClick={() => navigate("/settings")}>Settings</p>
               <p onClick={handleLogout} className="dropdown-logout">Logout</p>
             </div>
@@ -102,25 +104,29 @@ export default function MoodDetection() {
         </div>
       </nav>
 
-      <div className="music-home-content">
+      <div className="back-button-container">
+         <button className="back-link-btn" onClick={() => navigate("/home")}>
+            ← Back to Home
+         </button>
+      </div>
+
+      <div className="music-home-content detection-wrapper">
         <header className="music-welcome-header">
-            <button className="music-logout-btn" onClick={() => navigate("/home")} style={{marginBottom: '20px'}}>
-                ← Back to Dashboard
-            </button>
             <h1>Mood Detection</h1>
             <p>Please hold still while we analyze your mood.</p>
         </header>
 
         {/* Show Start Button if not detecting */}
         {!isDetecting ? (
-            <div style={{ textAlign: "center", padding: "50px" }}>
-                <div className="music-card" style={{ maxWidth: "500px", margin: "0 auto" }}>
-                    <div style={{ fontSize: "4rem", marginBottom: "20px" }}>📸</div>
+            <div style={{ textAlign: "center", padding: "40px" }}>
+                <div className="music-card" style={{ maxWidth: "500px", margin: "0 auto", padding: "60px 40px" }}>
+                    <div style={{ fontSize: "5rem", marginBottom: "20px" }}>📷</div>
                     <h3>Start Facial Analysis</h3>
-                    <p>Click the button below to open your camera and start the detection process.</p>
+                    <p style={{marginBottom: "30px", color: "#666"}}>Click the button below to open your camera and start the detection process.</p>
                     <button 
                         className="music-main-btn large-btn" 
                         onClick={() => setIsDetecting(true)}
+                        style={{background: 'linear-gradient(90deg, #ff4e00, #ec008c)'}}
                     >
                         ✨ Start Detection
                     </button>
@@ -133,31 +139,24 @@ export default function MoodDetection() {
                 <div className="camera-side">
                 <div 
                     className="camera-box" 
-                    style={{ 
-                    backgroundColor: "#000", 
-                    borderRadius: "24px",
-                    overflow: "hidden",
-                    border: "6px solid #fff",
-                    boxShadow: "0 20px 50px rgba(0,0,0,0.3)"
-                    }}
                 >
-                    {/* The camera feed stays open even after detection is finished */}
+                  {/* To make camera work after detection. */}
                     <img 
                     src={`http://127.0.0.1:5000/video_feed?t=${Date.now()}`} 
                     alt="Live Emotion Feed" 
-                    style={{ width: "100%", height: "auto", display: "block" }}
+                    className="camera-feed"
                     />
                 </div>
                 
                 {/* STABILITY PROGRESS BAR */}
                 <div className="stability-container">
                     {confirmedMood ? (
-                        <p style={{color: '#27ae60', fontWeight: 'bold'}}>Detection Complete!</p>
+                        <p style={{color: '#27ae60', fontWeight: 'bold', fontSize: '1.1rem'}}>Detection Complete!</p>
                     ) : (
-                        <p>Analyzing expression stability...</p>
+                        <p style={{color: '#555'}}>Analyzing expression stability...</p>
                     )}
                     <div className="stability-bar-bg">
-                    <div className="stability-bar-fill" style={{ width: `${(stabilityScore / 5) * 100}%` }}></div>
+                        <div className="stability-bar-fill" style={{ width: `${Math.min((stabilityScore / 3) * 100, 100)}%` }}></div>
                     </div>
                 </div>
                 </div>
@@ -173,7 +172,7 @@ export default function MoodDetection() {
                     <div className="final-mood-box">
                     {confirmedMood ? (
                         <>
-                        <p>Detected Mood:</p>
+                        <p style={{fontSize: '1rem', color: '#666'}}>Detected Mood:</p>
                         <h2 className="detected-mood-text">{confirmedMood}</h2>
                         <button className="recommendation-btn" onClick={() => alert(`Finding ${confirmedMood} music...`)}>
                             🎵 Get Playlist
@@ -187,7 +186,7 @@ export default function MoodDetection() {
                         </button>
                         </>
                     ) : (
-                        <p className="waiting-text">Hold still for 5 seconds to confirm mood...</p>
+                        <p className="waiting-text">Hold still for 3 seconds to confirm mood...</p>
                     )}
                     </div>
                 </div>

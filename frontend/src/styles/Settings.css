@@ -1,128 +1,118 @@
-
 .settings-page-wrapper {
-    max-width: 1400px !important; 
-    width: 95%;
-    margin: 0 auto;
-    padding: 60px 20px;
+    max-width: 1200px !important; 
+    width: 90%;
+    margin: 30px auto;
     display: flex;
-    gap: 30px;
+    gap: 40px;
     align-items: flex-start;
 }
 
-/* SIDEBAR  */
+.settings-back-container {
+    width: 100%;
+    margin: 20px 0 0 0;
+    padding: 0 60px; 
+    box-sizing: border-box;
+}
+
+.back-link-btn {
+    background: transparent;
+    border: 1px solid #ccc;
+    padding: 8px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: 600;
+    color: #555;
+    transition: 0.3s;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.9rem;
+}
+
+.back-link-btn:hover {
+    border-color: #ff4e00;
+    color: #ff4e00;
+    background: white;
+    transform: translateX(-3px);
+}
+
+/* SIDEBAR */
 .settings-sidebar {
-    width: 280px; 
+    width: 250px; 
     flex-shrink: 0; 
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 12px;
+    background: white;
+    padding: 20px;
+    border-radius: 20px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.02);
 }
 
 .sidebar-btn {
     width: 100%;
-    padding: 18px 25px;
+    padding: 15px 20px;
     text-align: left;
-    background: white;
-    border: 1px solid #eee;
-    border-radius: 15px;
+    background: transparent;
+    border: none;
+    border-radius: 12px;
     font-weight: 600;
     cursor: pointer;
     transition: 0.3s;
     font-size: 1rem;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+    color: #555;
 }
 
 .sidebar-btn:hover {
-    background: #f8f8f8;
-    transform: translateX(5px);
+    background: #f4f7f6;
+    color: #333;
 }
 
 .sidebar-btn.active {
-    background: linear-gradient(135deg, #8e44ad 0%, #3498db 100%);
+    background: #1a1614;
     color: white;
-    border: none;
-    box-shadow: 0 8px 20px rgba(142, 68, 173, 0.3);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.settings-content-card {
+    flex: 1;
+    min-height: 500px;
+    display: flex;
+    flex-direction: column;
+    align-items: center; 
+    justify-content: flex-start;
+    padding-top: 50px !important;
+}
+
+.settings-form {
+    width: 100%;
+    max-width: 500px;
+    text-align: left;
 }
 
 /* DELETE ACCOUNT */
 .delete-section {
-    padding: 30px;
-    border: 1px solid #ffebeb;
-    background-color: #fffbfb;
+    padding: 40px;
+    background-color: #fff5f5;
     border-radius: 20px;
+    border: 1px solid #ffcccc;
+    text-align: center;
+    max-width: 600px;
 }
 
-/*  CHARTS & HISTORY */
-.history-container {
-    width: 100%;
-    padding: 10px;
-}
-
-.filters-row {
-    display: flex;           
-    align-items: center;     
-    justify-content: flex-start; 
-    gap: 30px;               
-    background: #f8f9fa;
-    padding: 25px;
-    border-radius: 15px;
-    border: 1px solid #eee;
-    margin-bottom: 30px;
-    flex-wrap: nowrap;      
-}
-
-.filter-group {
-    display: flex;
-    align-items: center;     
-    gap: 10px;               
-}
-
-.filter-group label {
-    white-space: nowrap;     
-    margin-bottom: 0;        
-    font-weight: 600;
-    color: #555;
-    min-width: fit-content;
-}
-
-.filter-group input,
-.filter-group select {
-    width: 160px;            
-    padding: 10px 15px;
-    margin-bottom: 0 !important; 
-    border-radius: 8px;
-    border: 1px solid #ddd;
-    background: white;
-}
-
-.chart-box {
-    background: #fff;
-    border-radius: 20px;
-    padding: 20px;
-}
-
-table {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
-}
-
-th {
-    background: #f4f4f4;
-    color: #555;
-    font-weight: 700;
-}
-
-td, th {
-    padding: 18px 15px !important;
-}
-
-tr:last-child td {
-    border-bottom: none !important;
-}
-
-@media (max-width: 1100px) {
-    .filters-row {
-        flex-wrap: wrap;
+@media (max-width: 900px) {
+    .settings-page-wrapper {
+        flex-direction: column;
+    }
+    .settings-sidebar {
+        width: 100%;
+        flex-direction: row;
+        overflow-x: auto;
+    }
+    .sidebar-btn {
+        white-space: nowrap;
+    }
+    .settings-back-container {
+        padding: 0 20px;
     }
 }

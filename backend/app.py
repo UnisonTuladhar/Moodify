@@ -68,7 +68,7 @@ class VideoCamera:
             # Draw rectangle around the face
             cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 255), 2)
             
-            # Crop and resize the face to 48x48 for the CNN model
+            # Crop and resize the face to 48x48
             roi_gray = gray[y:y+h, x:x+w]
             roi_gray = cv2.resize(roi_gray, (48, 48), interpolation=cv2.INTER_AREA)
 
@@ -81,11 +81,8 @@ class VideoCamera:
                 # Predict Emotion
                 prediction = classifier.predict(roi)[0]
                 label = emotion_labels[prediction.argmax()]
-                
-                # Update global variable for the 5-second stability check
                 last_predicted_mood = label
                 
-                # Overlay the label on the camera feed
                 label_position = (x, y-10)
                 cv2.putText(frame, f"Mood: {label}", label_position, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
             else:
@@ -109,13 +106,12 @@ def video_feed():
     return Response(gen(VideoCamera()),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
 
-# NEW ROUTE: Get Current Mood for 5-second logic
 @app.route('/get_mood', methods=['GET'])
 def get_mood():
     global last_predicted_mood
     return jsonify({"mood": last_predicted_mood}), 200
 
-# --- SAVE MOOD TO HISTORY ---
+# SAVE MOOD TO HISTORY 
 @app.post("/save-mood")
 def save_mood():
     data = request.json
@@ -136,29 +132,27 @@ def save_mood():
     finally:
         db.close()
 
-# --- GET EMOTION HISTORY WITH FILTERS ---
 @app.post("/user/emotion-history")
 def get_emotion_history():
     data = request.json
     email = data.get("email")
-    mood_filter = data.get("mood_filter") # Optional
-    start_date = data.get("start_date")   # Optional 'YYYY-MM-DD'
-    end_date = data.get("end_date")       # Optional 'YYYY-MM-DD'
+    mood_filter = data.get("mood_filter")
+    start_date = data.get("start_date")   
+    end_date = data.get("end_date")       
 
-    # Base query
     query = "SELECT emotion, DATE_FORMAT(detected_at, '%Y-%m-%d %H:%i') as date FROM emotion_history WHERE email=%s"
     params = [email]
 
-    # Add filters dynamically
+    # Add filters 
     if mood_filter and mood_filter != "All":
         query += " AND emotion = %s"
         params.append(mood_filter)
     
-    if start_date:
+    if start_date and start_date.strip() != "":
         query += " AND DATE(detected_at) >= %s"
         params.append(start_date)
         
-    if end_date:
+    if end_date and end_date.strip() != "":
         query += " AND DATE(detected_at) <= %s"
         params.append(end_date)
 
@@ -235,6 +229,7 @@ def verify_registration():
         db.close()
         return jsonify({"error": "Invalid OTP!"}), 400
 
+# Login Logic
 @app.post("/login")
 def login():
     data = request.json
@@ -307,6 +302,7 @@ def get_profile():
         return jsonify(user), 200
     return jsonify({"error": "User not found"}), 404
 
+# Update Profile
 @app.post("/user/update-profile")
 def update_profile():
     data = request.json
@@ -325,6 +321,7 @@ def update_profile():
     finally:
         db.close()
 
+# Change Password
 @app.post("/user/change-password")
 def change_password():
     data = request.json
@@ -346,7 +343,7 @@ def change_password():
         db.close()
         return jsonify({"error": "Current password is incorrect!"}), 400
 
-# DELETE ACCOUNT WITH ADMIN CHECK
+# Delete Account
 @app.post("/user/delete-account")
 def delete_account():
     data = request.json
