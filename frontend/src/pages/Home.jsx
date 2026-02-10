@@ -35,7 +35,7 @@ export default function Home() {
     <div className="music-home-container">
       {/* Navbar */}
       <nav className="music-nav">
-        <div className="music-logo">Moodify</div>
+        <div className="music-logo" onClick={() => navigate("/home")} style={{cursor:'pointer'}}>Moodify</div>
         
         <div className="profile-container">
           <img 
@@ -116,9 +116,9 @@ export default function Home() {
         {/* ACTION BANNER */}
         <section className="cta-banner">
           <div className="cta-content">
-            <h2>Ready to tune into your feelings?</h2>
-            <p>Join thousands of users discovering music in a whole new way.</p>
-            <button className="cta-btn" onClick={() => navigate("/detect-mood")}>Get Started</button>
+            <h2>Track Your Emotional Journey</h2>
+            <p>Visualize your mood patterns over time and gain deeper insights into your well-being.</p>
+            <button className="cta-btn" onClick={() => navigate("/dashboard")}>View Mood Analytics</button>
           </div>
         </section>
       </div>

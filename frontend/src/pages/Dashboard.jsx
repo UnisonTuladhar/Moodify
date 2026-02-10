@@ -32,11 +32,17 @@ export default function Dashboard() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
   const username = localStorage.getItem("username") || "User";
   const userEmail = localStorage.getItem("email");
 
   useEffect(() => {
     if (userEmail && activeTab === "mood") {
+      // Reset to page 1 when filters change
+      setCurrentPage(1); 
       fetchHistory();
     }
   }, [userEmail, activeTab, moodFilter, startDate, endDate]);
@@ -77,6 +83,14 @@ export default function Dashboard() {
     localStorage.clear();
     navigate("/login");
   };
+
+  // Pagination Logic
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = history.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(history.length / itemsPerPage);
+
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   return (
     <div className="music-home-container">
@@ -203,7 +217,7 @@ export default function Dashboard() {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {history.map((item, index) => (
+                                            {currentItems.map((item, index) => (
                                                 <tr key={index}>
                                                     <td>{item.date}</td>
                                                     <td>
@@ -216,6 +230,46 @@ export default function Dashboard() {
                                             ))}
                                         </tbody>
                                     </table>
+                                </div>
+
+                                {/* Pagination Controls */}
+                                <div className="pagination-controls">
+                                    <button 
+                                        className="page-btn nav" 
+                                        onClick={() => paginate(currentPage - 1)} 
+                                        disabled={currentPage === 1}
+                                    >
+                                        &laquo; Prev
+                                    </button>
+                                    
+                                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(number => {
+                                        // Show limited page numbers if there are too many (simple implementation)
+                                        if (totalPages > 10 && Math.abs(currentPage - number) > 2 && number !== 1 && number !== totalPages) {
+                                            return null; 
+                                        }
+                                        // Add dots for skipped pages
+                                        if (totalPages > 10 && Math.abs(currentPage - number) === 3 && number !== 1 && number !== totalPages) {
+                                            return <span key={number} className="page-dots">...</span>
+                                        }
+
+                                        return (
+                                            <button 
+                                                key={number} 
+                                                className={`page-btn ${currentPage === number ? 'active' : ''}`} 
+                                                onClick={() => paginate(number)}
+                                            >
+                                                {number}
+                                            </button>
+                                        );
+                                    })}
+
+                                    <button 
+                                        className="page-btn nav" 
+                                        onClick={() => paginate(currentPage + 1)} 
+                                        disabled={currentPage === totalPages}
+                                    >
+                                        Next &raquo;
+                                    </button>
                                 </div>
                             </div>
                         </>

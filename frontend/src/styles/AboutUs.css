@@ -1,0 +1,148 @@
+.about-hero-section {
+    background-color: #FFF5F5; 
+    padding: 60px 0;
+    width: 100%;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.about-hero-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 40px;
+    gap: 40px;
+}
+
+.about-text-col {
+    flex: 1;
+}
+
+.about-title {
+    font-size: 3.5rem;
+    font-weight: 800;
+    color: #da2c1d;
+    margin-bottom: 10px;
+}
+
+.about-breadcrumb {
+    font-size: 0.9rem;
+    color: #e74c3c;
+    margin-bottom: 25px;
+    font-weight: 500;
+}
+
+.about-breadcrumb span {
+    cursor: pointer;
+}
+
+.about-breadcrumb span.active {
+    color: #555;
+    cursor: default;
+}
+
+.about-description {
+    color: #333;
+    line-height: 1.7;
+    font-size: 1.05rem;
+    text-align: justify;
+}
+
+.about-img-col {
+    flex: 1.2;
+    display: flex;
+    justify-content: center;
+}
+
+.about-hero-img {
+    width: 100%;
+    max-width: 600px;
+    height: auto;
+    min-height: 300px;
+    background-color: #eee; 
+    border-radius: 10px;
+    object-fit: contain;
+}
+
+/* Why Moodify Section */
+.why-section-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 60px 40px;
+}
+
+.why-title {
+    text-align: center;
+    font-size: 2.5rem;
+    color: #1a1614;
+    margin-bottom: 80px;
+    font-weight: 800;
+}
+
+.feature-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 60px;
+    margin-bottom: 100px;
+}
+
+.feature-row.reverse-layout {
+    flex-direction: row-reverse;
+}
+
+.feature-text {
+    flex: 1;
+}
+
+.feature-heading {
+    font-size: 1.5rem;
+    color: #da2c1d; 
+    margin-bottom: 20px;
+    font-weight: 700;
+}
+
+.feature-text p {
+    color: #444;
+    line-height: 1.8;
+    font-size: 1rem;
+    text-align: justify;
+}
+
+.feature-img {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+}
+
+.feature-img img {
+    width: 100%;
+    max-width: 500px;
+    height: auto;
+    min-height: 250px;
+    background-color: #eee;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+}
+
+@media (max-width: 900px) {
+    .about-hero-content {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .about-text-col, .about-img-col {
+        width: 100%;
+    }
+
+    .feature-row, .feature-row.reverse-layout {
+        flex-direction: column;
+        gap: 30px;
+        margin-bottom: 60px;
+    }
+    
+    .feature-text p, .about-description {
+        text-align: left;
+    }
+}

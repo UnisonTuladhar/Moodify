@@ -34,7 +34,7 @@ const Footer = () => {
             <h4>Quick Links</h4>
             <ul>
               <li onClick={() => navigate("/home")}>Home</li>
-              <li>About</li>
+              <li onClick={() => navigate("/about")}>About</li>
               <li onClick={() => navigate("/settings")}>Profile</li>
               <li onClick={() => navigate("/dashboard")}>Dashboard</li>
               <li onClick={handleLogout} >Logout</li>

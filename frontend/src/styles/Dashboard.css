@@ -74,14 +74,14 @@
     box-shadow: 0 5px 15px rgba(236, 0, 140, 0.3);
 }
 
-/* FILTERS */
+/* FILTERS - Updated to be less congested */
 .dashboard-filters {
     display: flex;
-    gap: 20px;
-    justify-content: center;
+    gap: 30px; /* Increased gap */
+    justify-content: space-between; /* Spread items out */
     margin-bottom: 30px;
     background: white;
-    padding: 25px;
+    padding: 30px; /* More padding */
     border-radius: 20px;
     box-shadow: 0 5px 20px rgba(0,0,0,0.03);
     flex-wrap: wrap;
@@ -91,25 +91,37 @@
 .filter-item {
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 8px;
     text-align: left;
+    flex: 1; /* Allows boxes to take up equal available space */
+    min-width: 200px; /* Ensure they don't get too small */
 }
 
 .filter-item label {
-    font-size: 0.9rem;
+    font-size: 1rem;
     font-weight: 600;
-    color: #555;
+    color: #444;
     margin-left: 5px;
 }
 
 .dashboard-filters select, 
 .dashboard-filters input {
-    padding: 12px 15px;
-    border: 1px solid #eee;
+    width: 100%; /* Make input fill its container */
+    padding: 14px 18px; /* Larger click area */
+    border: 1px solid #ddd;
     border-radius: 12px;
     outline: none;
     font-size: 1rem;
     background: #f9f9f9;
+    box-sizing: border-box; /* Ensures padding doesn't affect width */
+    transition: 0.3s;
+}
+
+.dashboard-filters select:focus, 
+.dashboard-filters input:focus {
+    border-color: #8e44ad;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(142, 68, 173, 0.1);
 }
 
 /* CHARTS */
@@ -195,11 +207,71 @@ td {
     border: 1px solid #f0f0f0;
 }
 
+/* PAGINATION */
+.pagination-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-top: 25px;
+}
+
+.page-btn {
+    border: none;
+    background: #f0f0f0;
+    color: #555;
+    padding: 8px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: 0.2s;
+    min-width: 35px;
+}
+
+.page-btn:hover:not(:disabled) {
+    background: #e0e0e0;
+}
+
+.page-btn.active {
+    background: linear-gradient(90deg, #ff4e00, #ec008c);
+    color: white;
+    box-shadow: 0 4px 10px rgba(236, 0, 140, 0.2);
+}
+
+.page-btn.nav {
+    background: transparent;
+    border: 1px solid #ddd;
+    padding: 8px 16px;
+}
+
+.page-btn.nav:hover:not(:disabled) {
+    border-color: #888;
+    background: white;
+}
+
+.page-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.page-dots {
+    color: #999;
+    padding: 0 5px;
+}
+
 @media (max-width: 900px) {
     .charts-row {
         grid-template-columns: 1fr;
     }
     .dashboard-back-container {
         padding: 0 20px;
+    }
+    .dashboard-filters {
+        flex-direction: column;
+        gap: 15px;
+    }
+    .filter-item {
+        width: 100%;
     }
 }
