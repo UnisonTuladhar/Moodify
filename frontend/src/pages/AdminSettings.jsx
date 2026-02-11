@@ -5,7 +5,7 @@ import "../styles/Shared.css";
 import "../styles/Settings.css";
 import profileImg from "../images/profile.jpg";
 
-export default function Settings() {
+export default function AdminSettings() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("profile");
   const [showDropdown, setShowDropdown] = useState(false);
@@ -13,16 +13,11 @@ export default function Settings() {
   const [user, setUser] = useState({ username: "", email: "" });
   const [passwords, setPasswords] = useState({ current: "", new: "" });
   
-  // Delete Account 
+  // Delete Account State
   const [deleteStep, setDeleteStep] = useState(1);
   const [delPassword, setDelPassword] = useState("");
 
   const userEmail = localStorage.getItem("email");
-  const isAdmin = localStorage.getItem("is_admin") === "1";
-
-  // Navigation Logic
-  const homeLink = isAdmin ? "/admin-home" : "/home";
-  const dashboardLink = isAdmin ? "/admin-dashboard" : "/dashboard";
 
   useEffect(() => {
     if (userEmail) fetchProfile();
@@ -46,7 +41,7 @@ export default function Settings() {
       });
       localStorage.setItem("email", user.email);
       localStorage.setItem("username", user.username);
-      alert("Profile Updated Successfully!");
+      alert("Admin Profile Updated Successfully!");
     } catch (err) { alert("Update failed"); }
   };
 
@@ -72,11 +67,11 @@ export default function Settings() {
         email: userEmail,
         password: delPassword
       });
-      alert("Account Deleted Permanently.");
+      alert("Admin Account Deleted.");
       localStorage.clear();
       navigate("/login");
     } catch (err) {
-      alert(err.response?.data?.error || "Incorrect Password");
+      alert(err.response?.data?.error || "Incorrect Password or Cannot Delete Last Admin");
     }
   };
 
@@ -86,9 +81,11 @@ export default function Settings() {
   };
 
   return (
-    <div className="music-home-container">
-      <nav className="music-nav">
-        <div className="music-logo" onClick={() => navigate(homeLink)} style={{cursor:'pointer'}}>Moodify</div>
+    <div className="music-home-container" style={{background: "#f0f2f5"}}>
+      <nav className="music-nav" style={{borderTop: "5px solid #8e44ad"}}>
+        <div className="music-logo" onClick={() => navigate("/admin-home")} style={{cursor:'pointer'}}>
+            Moodify <span style={{fontSize: "0.8rem", color: "#8e44ad"}}>ADMIN</span>
+        </div>
         
         <div className="profile-container">
           <img 
@@ -99,8 +96,8 @@ export default function Settings() {
           />
           {showDropdown && (
             <div className="profile-dropdown">
-               <p onClick={() => navigate(homeLink)}>Home</p>
-               <p onClick={() => navigate(dashboardLink)}>Dashboard</p>
+               <p onClick={() => navigate("/admin-home")}>Home</p>
+               <p onClick={() => navigate("/admin-dashboard")}>Dashboard</p>
                <p onClick={handleLogout} className="dropdown-logout">Logout</p>
             </div>
           )}
@@ -108,7 +105,7 @@ export default function Settings() {
       </nav>
 
       <div className="settings-back-container">
-         <button className="back-link-btn" onClick={() => navigate(homeLink)}>
+         <button className="back-link-btn" onClick={() => navigate("/admin-home")}>
            ← Back to Home
          </button>
       </div>
@@ -127,7 +124,7 @@ export default function Settings() {
           
           {activeTab === "profile" && (
              <form onSubmit={handleUpdateProfile} className="settings-form">
-               <h2 style={{marginBottom: '30px', color: '#333'}}>Edit Profile</h2>
+               <h2 style={{marginBottom: '30px', color: '#333'}}>Edit Admin Profile</h2>
                <div className="music-input-group">
                  <label>Username</label>
                  <input value={user.username} onChange={e => setUser({...user, username: e.target.value})} />
@@ -159,8 +156,8 @@ export default function Settings() {
             <div className="delete-section">
               {deleteStep === 1 ? (
                 <>
-                  <h2 style={{color: '#e74c3c'}}>Delete Account</h2>
-                  <p style={{lineHeight: '1.6', color: '#666', marginTop: '10px'}}>Are you sure you want to delete your account? This action cannot be undone and you will lose all your emotion history.</p>
+                  <h2 style={{color: '#e74c3c'}}>Delete Admin Account</h2>
+                  <p style={{lineHeight: '1.6', color: '#666', marginTop: '10px'}}>Warning: Deleting your admin account may restrict access to the dashboard. Ensure there is at least one other admin.</p>
                   <div style={{display: 'flex', gap: '15px', marginTop: '30px', justifyContent: 'center'}}>
                     <button className="music-logout-btn" style={{background: '#e74c3c', padding: '12px 30px'}} onClick={() => setDeleteStep(2)}>Yes, Delete</button>
                     <button className="music-card-btn" style={{margin: 0, padding: '12px 30px'}} onClick={() => setActiveTab("profile")}>No, Keep Account</button>

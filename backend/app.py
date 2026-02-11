@@ -132,6 +132,7 @@ def save_mood():
     finally:
         db.close()
 
+# GET MOOD HISTORY WITH FILTERS
 @app.post("/user/emotion-history")
 def get_emotion_history():
     data = request.json
@@ -211,6 +212,7 @@ def register_step1():
     finally:
         db.close()
 
+# OTP Verification Logic
 @app.post("/verify-registration")
 def verify_registration():
     data = request.json
@@ -233,8 +235,8 @@ def verify_registration():
 @app.post("/login")
 def login():
     data = request.json
-    email = data["email"]
-    password = hash_password(data["password"])
+    email = data.get("email")
+    password = hash_password(data.get("password", ""))
     db = get_db_connection()
     cursor = db.cursor(dictionary=True)
     cursor.execute("SELECT username, email, is_admin FROM users WHERE email=%s AND password=%s", (email, password))
@@ -250,14 +252,14 @@ def login():
     else:
         return jsonify({"error": "Invalid email or password!"}), 401
 
-# ADMIN ADD 
+# ADMIN ADD USER
 @app.post("/admin/add-user")
 def admin_add_user():
     data = request.json
     username = data["username"]
     email = data["email"]
     password = hash_password(data["password"])
-    is_admin = int(data["is_admin"]) # 1 for admin, 0 for user
+    is_admin = int(data["is_admin"]) 
 
     db = get_db_connection()
     cursor = db.cursor()
@@ -266,7 +268,6 @@ def admin_add_user():
         if cursor.fetchone():
             return jsonify({"error": "Email already registered!"}), 400
 
-        # Create user 
         cursor.execute("INSERT INTO users (username, email, password, is_admin, is_verified) VALUES (%s, %s, %s, %s, 1)",
                        (username, email, password, is_admin))
         db.commit()
@@ -276,20 +277,70 @@ def admin_add_user():
     finally:
         db.close()
 
-# Admin view users 
+# ADMIN VIEW USERS (ROBUST VERSION)
 @app.route("/admin/users", methods=["GET"])
 def get_all_users():
     db = get_db_connection()
     cursor = db.cursor(dictionary=True)
     try:
-        cursor.execute("SELECT username, email, is_admin FROM users")
+        query = "SELECT id, username, email, is_admin, DATE_FORMAT(created_at, '%Y-%m-%d') as registered_date FROM users"
+        cursor.execute(query)
         users = cursor.fetchall()
         return jsonify(users), 200
+    except Exception as e:
+        print(f"Error fetching users with date (Likely missing 'created_at' column): {e}")
+        try:
+            cursor.close()
+            cursor = db.cursor(dictionary=True)
+            cursor.execute("SELECT id, username, email, is_admin FROM users")
+            users = cursor.fetchall()
+            
+            for user in users:
+                user['registered_date'] = '2024-01-01' 
+            
+            return jsonify(users), 200
+        except Exception as e2:
+            return jsonify({"error": str(e2)}), 500
+    finally:
+        if db.is_connected():
+            db.close()
+
+# ADMIN DELETE USER
+@app.post("/admin/delete-user")
+def admin_delete_user():
+    data = request.json
+    user_id = data.get("id")
+    db = get_db_connection()
+    cursor = db.cursor()
+    try:
+        cursor.execute("DELETE FROM users WHERE id=%s", (user_id,))
+        db.commit()
+        return jsonify({"message": "User deleted successfully"}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     finally:
         db.close()
 
+# ADMIN EDIT USER
+@app.post("/admin/edit-user")
+def admin_edit_user():
+    data = request.json
+    user_id = data.get("id")
+    username = data.get("username")
+    email = data.get("email")
+    
+    db = get_db_connection()
+    cursor = db.cursor()
+    try:
+        cursor.execute("UPDATE users SET username=%s, email=%s WHERE id=%s", (username, email, user_id))
+        db.commit()
+        return jsonify({"message": "User updated successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        db.close()
+
+# USER PROFILE VIEW 
 @app.route("/user/profile", methods=["GET"])
 def get_profile():
     email = request.args.get('email')
@@ -302,7 +353,7 @@ def get_profile():
         return jsonify(user), 200
     return jsonify({"error": "User not found"}), 404
 
-# Update Profile
+# USER UPDATE PROFILE
 @app.post("/user/update-profile")
 def update_profile():
     data = request.json
@@ -321,7 +372,7 @@ def update_profile():
     finally:
         db.close()
 
-# Change Password
+# USER CHANGE PASSWORD
 @app.post("/user/change-password")
 def change_password():
     data = request.json
@@ -343,7 +394,7 @@ def change_password():
         db.close()
         return jsonify({"error": "Current password is incorrect!"}), 400
 
-# Delete Account
+# USER DELETE ACCOUNT
 @app.post("/user/delete-account")
 def delete_account():
     data = request.json
@@ -354,19 +405,17 @@ def delete_account():
     cursor = db.cursor(dictionary=True)
     
     try:
-        # Verify credentials and get current user info
         cursor.execute("SELECT is_admin FROM users WHERE email=%s AND password=%s", (email, password))
         user = cursor.fetchone()
 
         if not user:
             return jsonify({"error": "Incorrect password. Deletion failed."}), 400
 
-        # If user is an Admin, check if they are the LAST admin
         if user['is_admin'] == 1:
             cursor.execute("SELECT COUNT(*) as count FROM users WHERE is_admin = 1")
             admin_data = cursor.fetchone()
             if admin_data['count'] <= 1:
-                return jsonify({"error": "There is only 1 admin in the database. Create another admin account to delete this account."}), 403
+                return jsonify({"error": "Cannot delete the only admin."}), 403
 
         cursor.execute("DELETE FROM users WHERE email=%s", (email,))
         db.commit()
