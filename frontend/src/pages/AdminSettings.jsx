@@ -84,7 +84,7 @@ export default function AdminSettings() {
     <div className="music-home-container" style={{background: "#f0f2f5"}}>
       <nav className="music-nav" style={{borderTop: "5px solid #8e44ad"}}>
         <div className="music-logo" onClick={() => navigate("/admin-home")} style={{cursor:'pointer'}}>
-            Moodify <span style={{fontSize: "0.8rem", color: "#8e44ad"}}>ADMIN</span>
+            Moodify 
         </div>
         
         <div className="profile-container">

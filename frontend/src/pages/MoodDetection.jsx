@@ -11,12 +11,15 @@ export default function MoodDetection() {
   const [showDropdown, setShowDropdown] = useState(false);
   
   const [isDetecting, setIsDetecting] = useState(false);
-
   const [liveMood, setLiveMood] = useState("Detecting...");
   const [confirmedMood, setConfirmedMood] = useState(null);
   const [stabilityScore, setStabilityScore] = useState(0); 
   const lastMoodRef = useRef("");
   const stabilityCountRef = useRef(0);
+
+  // Playlist State
+  const [playlist, setPlaylist] = useState([]);
+  const [playlistLoading, setPlaylistLoading] = useState(false);
 
   // Get user email for saving history
   const userEmail = localStorage.getItem("email");
@@ -37,6 +40,21 @@ export default function MoodDetection() {
           console.log("Mood saved to history:", mood);
       } catch (err) {
           console.error("Failed to save mood history", err);
+      }
+  };
+
+  // Fetch playlist based on mood
+  const handleGetPlaylist = async () => {
+      if(!confirmedMood) return;
+      setPlaylistLoading(true);
+      try {
+        const res = await axios.post("http://127.0.0.1:5000/user/get-playlist", { mood: confirmedMood });
+        setPlaylist(res.data);
+      } catch (err) {
+          console.error("Error fetching playlist", err);
+          alert("Failed to fetch songs.");
+      } finally {
+          setPlaylistLoading(false);
       }
   };
 
@@ -76,6 +94,7 @@ export default function MoodDetection() {
   // Reset logic to allow detecting again
   const handleDetectAgain = () => {
       setConfirmedMood(null);
+      setPlaylist([]);
       setStabilityScore(0);
       setLiveMood("Detecting...");
       stabilityCountRef.current = 0;
@@ -137,59 +156,80 @@ export default function MoodDetection() {
             <div className="detection-layout">
                 {/* LEFT SIDE: CAMERA */}
                 <div className="camera-side">
-                <div 
-                    className="camera-box" 
-                >
-                  {/* To make camera work after detection. */}
-                    <img 
-                    src={`http://127.0.0.1:5000/video_feed?t=${Date.now()}`} 
-                    alt="Live Emotion Feed" 
-                    className="camera-feed"
-                    />
-                </div>
-                
-                {/* STABILITY PROGRESS BAR */}
-                <div className="stability-container">
-                    {confirmedMood ? (
-                        <p style={{color: '#27ae60', fontWeight: 'bold', fontSize: '1.1rem'}}>Detection Complete!</p>
-                    ) : (
-                        <p style={{color: '#555'}}>Analyzing expression stability...</p>
-                    )}
-                    <div className="stability-bar-bg">
-                        <div className="stability-bar-fill" style={{ width: `${Math.min((stabilityScore / 3) * 100, 100)}%` }}></div>
+                    <div className="camera-box">
+                        <img 
+                            src={`http://127.0.0.1:5000/video_feed?t=${Date.now()}`} 
+                            alt="Live Emotion Feed" 
+                            className="camera-feed"
+                        />
                     </div>
-                </div>
+                    
+                    {/* STABILITY PROGRESS BAR */}
+                    <div className="stability-container">
+                        {confirmedMood ? (
+                            <p style={{color: '#27ae60', fontWeight: 'bold', fontSize: '1.1rem'}}>Detection Complete!</p>
+                        ) : (
+                            <p style={{color: '#555'}}>Analyzing expression stability...</p>
+                        )}
+                        <div className="stability-bar-bg">
+                            <div className="stability-bar-fill" style={{ width: `${Math.min((stabilityScore / 3) * 100, 100)}%` }}></div>
+                        </div>
+                    </div>
                 </div>
 
                 {/* RIGHT SIDE: RESULTS */}
                 <div className="results-side">
-                <div className="mood-result-card">
-                    <h3>Analysis Results</h3>
-                    <p className="live-indicator">
-                        {confirmedMood ? "● Detection Paused" : `● Live: ${liveMood}`}
-                    </p>
-                    
-                    <div className="final-mood-box">
-                    {confirmedMood ? (
-                        <>
-                        <p style={{fontSize: '1rem', color: '#666'}}>Detected Mood:</p>
-                        <h2 className="detected-mood-text">{confirmedMood}</h2>
-                        <button className="recommendation-btn" onClick={() => alert(`Finding ${confirmedMood} music...`)}>
-                            🎵 Get Playlist
-                        </button>
-                        <button 
-                            className="music-card-btn" 
-                            style={{marginTop: '15px', width: '100%', border: '1px solid #ddd'}} 
-                            onClick={handleDetectAgain}
-                        >
-                            🔄 Detect Mood Again
-                        </button>
-                        </>
-                    ) : (
-                        <p className="waiting-text">Hold still for 3 seconds to confirm mood...</p>
-                    )}
+                    <div className="mood-result-card">
+                        <h3>Analysis Results</h3>
+                        <p className="live-indicator">
+                            {confirmedMood ? "● Detection Paused" : `● Live: ${liveMood}`}
+                        </p>
+                        
+                        <div className="final-mood-box">
+                        {confirmedMood ? (
+                            <>
+                                <p style={{fontSize: '1rem', color: '#666'}}>Detected Mood:</p>
+                                <h2 className="detected-mood-text">{confirmedMood}</h2>
+                                
+                                {playlist.length === 0 ? (
+                                    <button className="recommendation-btn" onClick={handleGetPlaylist}>
+                                        {playlistLoading ? "Loading..." : "🎵 Get Playlist"}
+                                    </button>
+                                ) : null}
+
+                                <button 
+                                    className="music-card-btn" 
+                                    style={{marginTop: '15px', width: '100%', border: '1px solid #ddd'}} 
+                                    onClick={handleDetectAgain}
+                                >
+                                    🔄 Detect Mood Again
+                                </button>
+                            </>
+                        ) : (
+                            <p className="waiting-text">Hold still for 3 seconds to confirm mood...</p>
+                        )}
+                        </div>
                     </div>
                 </div>
+            </div>
+        )}
+
+        {/* PLAYLIST SECTION */}
+        {playlist.length > 0 && (
+            <div className="music-card full-width-card" style={{marginTop: '40px', textAlign: 'left', animation: 'fadeIn 1s ease'}}>
+                <h3>Recommended {confirmedMood} Songs</h3>
+                <p style={{color: '#666', marginBottom: '20px'}}>Based on your detected emotion, here are some tracks you might like.</p>
+                
+                <div className="playlist-grid">
+                    {playlist.map((song) => (
+                        <div key={song.id} className="song-item" style={{display: 'flex', justifyContent:'space-between', alignItems: 'center', padding: '15px', borderBottom: '1px solid #eee'}}>
+                            <div>
+                                <h4 style={{margin: 0, color: '#333'}}>{song.title}</h4>
+                                <p style={{margin: 0, color: '#888', fontSize: '0.9rem'}}>{song.artist} • {song.language}</p>
+                            </div>
+                            <audio controls src={`http://127.0.0.1:5000/songs/${song.file_path}`} style={{height: '35px'}}></audio>
+                        </div>
+                    ))}
                 </div>
             </div>
         )}

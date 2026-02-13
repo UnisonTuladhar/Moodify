@@ -19,7 +19,7 @@ export default function AdminHome() {
       {/* Admin Navbar */}
       <nav className="music-nav" style={{borderTop: "5px solid #8e44ad"}}>
         <div className="music-logo" onClick={() => navigate("/admin-home")} style={{cursor:'pointer'}}>
-          Moodify <span style={{fontSize: "0.8rem", color: "#8e44ad"}}>ADMIN</span>
+          Moodify 
         </div>
         
         <div className="profile-container">
@@ -41,10 +41,10 @@ export default function AdminHome() {
 
       {/* Admin Home Content */}
       <div className="music-home-content">
-        <div className="admin-status-label">ADMINISTRATION PANEL</div>
+        <div className="admin-status-label">ADMIN PANEL</div>
         
         <header className="music-welcome-header">
-          <h1>Welcome, Administrator <span className="highlight-text">{adminName}</span></h1>
+          <h1>Welcome Back, <span className="highlight-text">{adminName}</span></h1>
           <p className="hero-subtitle">
             Manage users, monitor system analytics, and configure application settings from here.
           </p>

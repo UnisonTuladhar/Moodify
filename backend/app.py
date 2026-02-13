@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, Response 
+from flask import Flask, request, jsonify, Response, send_from_directory 
 from flask_cors import CORS
 from config import get_db_connection
 from datetime import datetime
@@ -7,6 +7,7 @@ import random
 import cv2 
 import numpy as np
 import os
+from werkzeug.utils import secure_filename 
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing.image import img_to_array
 from flask_mail import Mail, Message 
@@ -21,6 +22,20 @@ app.config['MAIL_USERNAME'] = 'tuladharunison@gmail.com'
 app.config['MAIL_PASSWORD'] = 'wxke isfd qwpb yevk'   
 app.config['MAIL_USE_TLS'] = False
 app.config['MAIL_USE_SSL'] = True
+app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024
+
+# FILE UPLOAD CONFIGURATION
+UPLOAD_FOLDER = 'static/songs'
+ALLOWED_EXTENSIONS = {'mp3'}
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+# Create folder if it doesn't exist
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 mail = Mail(app)
 
@@ -41,7 +56,7 @@ try:
 except Exception as e:
     print(f"Error loading AI components: {e}")
 
-# CAMERA Integration with Emotion Detection
+# CAMERA Integration 
 class VideoCamera:
     def __init__(self):
         self.video = cv2.VideoCapture(0)
@@ -170,6 +185,111 @@ def get_emotion_history():
     finally:
         db.close()
 
+# Add songs logic (Admin)
+@app.post("/admin/add-song")
+def add_song():
+    try:
+        if 'file' not in request.files:
+            return jsonify({"error": "No file part"}), 400
+        
+        file = request.files['file']
+        title = request.form.get('title')
+        artist = request.form.get('artist')
+        mood = request.form.get('mood')
+        language = request.form.get('language')
+
+        if file.filename == '':
+            return jsonify({"error": "No selected file"}), 400
+        
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            # Create unique filename to avoid overwrites
+            unique_filename = f"{int(datetime.now().timestamp())}_{filename}"
+            file.save(os.path.join(app.config['UPLOAD_FOLDER'], unique_filename))
+            
+            # Save to Database
+            db = get_db_connection()
+            cursor = db.cursor()
+            query = "INSERT INTO songs (title, artist, mood, language, file_path) VALUES (%s, %s, %s, %s, %s)"
+            cursor.execute(query, (title, artist, mood, language, unique_filename))
+            db.commit()
+            db.close()
+            
+            return jsonify({"message": "Song uploaded successfully!"}), 201
+        else:
+            return jsonify({"error": "Invalid file type (only MP3 allowed)"}), 400
+            
+    except Exception as e:
+        print(e)
+        return jsonify({"error": str(e)}), 500
+
+# Get all songs (Admin)
+@app.get("/admin/songs")
+def get_all_songs():
+    db = get_db_connection()
+    cursor = db.cursor(dictionary=True)
+    try:
+        cursor.execute("SELECT * FROM songs ORDER BY id DESC")
+        songs = cursor.fetchall()
+        return jsonify(songs), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        db.close()
+
+# Delete songs (Admin)
+@app.post("/admin/delete-song")
+def delete_song():
+    data = request.json
+    song_id = data.get('id')
+    
+    db = get_db_connection()
+    cursor = db.cursor(dictionary=True)
+    try:
+        # Get filename first to delete file from folder
+        cursor.execute("SELECT file_path FROM songs WHERE id=%s", (song_id,))
+        result = cursor.fetchone()
+        
+        if result:
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], result['file_path'])
+            if os.path.exists(file_path):
+                os.remove(file_path) # Delete actual file
+            
+            # Delete DB Record
+            cursor.execute("DELETE FROM songs WHERE id=%s", (song_id,))
+            db.commit()
+            return jsonify({"message": "Song deleted successfully"}), 200
+        else:
+            return jsonify({"error": "Song not found"}), 404
+            
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        db.close()
+
+# Display songs by mood detected (User)
+@app.post("/user/get-playlist")
+def get_playlist_by_mood():
+    data = request.json
+    mood = data.get('mood')
+    
+    db = get_db_connection()
+    cursor = db.cursor(dictionary=True)
+    try:
+        query = "SELECT * FROM songs WHERE mood=%s ORDER BY RAND() LIMIT 10" # Random shuffle
+        cursor.execute(query, (mood,))
+        songs = cursor.fetchall()
+        return jsonify(songs), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        db.close()
+
+@app.route('/songs/<path:filename>')
+def serve_songs(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
+# For hassed passwords and OTP generation
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
@@ -252,7 +372,7 @@ def login():
     else:
         return jsonify({"error": "Invalid email or password!"}), 401
 
-# ADMIN ADD USER
+# Add user (Admin)
 @app.post("/admin/add-user")
 def admin_add_user():
     data = request.json
@@ -277,7 +397,7 @@ def admin_add_user():
     finally:
         db.close()
 
-# ADMIN VIEW USERS (ROBUST VERSION)
+# View Users (Admin)
 @app.route("/admin/users", methods=["GET"])
 def get_all_users():
     db = get_db_connection()
@@ -305,7 +425,7 @@ def get_all_users():
         if db.is_connected():
             db.close()
 
-# ADMIN DELETE USER
+# Delete user (Admin)
 @app.post("/admin/delete-user")
 def admin_delete_user():
     data = request.json
@@ -321,7 +441,7 @@ def admin_delete_user():
     finally:
         db.close()
 
-# ADMIN EDIT USER
+# Edit user (Admin)
 @app.post("/admin/edit-user")
 def admin_edit_user():
     data = request.json
@@ -340,7 +460,7 @@ def admin_edit_user():
     finally:
         db.close()
 
-# USER PROFILE VIEW 
+# Profile View 
 @app.route("/user/profile", methods=["GET"])
 def get_profile():
     email = request.args.get('email')
@@ -353,7 +473,7 @@ def get_profile():
         return jsonify(user), 200
     return jsonify({"error": "User not found"}), 404
 
-# USER UPDATE PROFILE
+# Update Profile 
 @app.post("/user/update-profile")
 def update_profile():
     data = request.json
@@ -372,7 +492,7 @@ def update_profile():
     finally:
         db.close()
 
-# USER CHANGE PASSWORD
+# Change Password 
 @app.post("/user/change-password")
 def change_password():
     data = request.json
@@ -394,7 +514,7 @@ def change_password():
         db.close()
         return jsonify({"error": "Current password is incorrect!"}), 400
 
-# USER DELETE ACCOUNT
+# Delete Account 
 @app.post("/user/delete-account")
 def delete_account():
     data = request.json
@@ -426,4 +546,4 @@ def delete_account():
         db.close()
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, use_reloader=False)

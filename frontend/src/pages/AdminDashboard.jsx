@@ -15,11 +15,13 @@ export default function AdminDashboard() {
   
   // Data State
   const [users, setUsers] = useState([]);
+  const [songs, setSongs] = useState([]); 
   const [filteredUsers, setFilteredUsers] = useState([]); 
   const [loading, setLoading] = useState(true);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState("");
+  const [songSearchQuery, setSongSearchQuery] = useState(""); 
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [chartData, setChartData] = useState([]);
@@ -28,9 +30,15 @@ export default function AdminDashboard() {
   const [showAddUser, setShowAddUser] = useState(false);
   const [newUser, setNewUser] = useState({ username: "", email: "", password: "", is_admin: "0" });
 
+  // Add Song State
+  const [showAddSong, setShowAddSong] = useState(false);
+  const [newSong, setNewSong] = useState({ title: "", artist: "", mood: "Happy", language: "", file: null });
+
   // Edit State
   const [editUserId, setEditUserId] = useState(null);
   const [editFormData, setEditFormData] = useState({ username: "", email: "" });
+
+  const emotionOptions = ['Angry', 'Disgust', 'Fear', 'Happy', 'Neutral', 'Sad', 'Surprise'];
 
   const handleLogout = () => {
     localStorage.clear();
@@ -40,20 +48,21 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (activeTab === "users") {
       fetchUsers();
+    } else if (activeTab === "music") {
+      fetchSongs();
     }
   }, [activeTab]);
 
   useEffect(() => {
-    if(users.length > 0) {
+    if(users.length > 0 && activeTab === "users") {
         processData();
     }
-  }, [users, startDate, endDate, searchQuery]);
+  }, [users, startDate, endDate, searchQuery, activeTab]);
 
   const fetchUsers = async () => {
     setLoading(true);
     try {
       const res = await axios.get("http://127.0.0.1:5000/admin/users");
-      console.log("API Response:", res.data); 
       if (Array.isArray(res.data)) {
         setUsers(res.data);
         setFilteredUsers(res.data); 
@@ -68,10 +77,27 @@ export default function AdminDashboard() {
     }
   };
 
+  const fetchSongs = async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get("http://127.0.0.1:5000/admin/songs");
+      if (Array.isArray(res.data)) {
+        setSongs(res.data);
+      } else {
+        setSongs([]);
+      }
+    } catch (err) {
+      console.error("Error fetching songs", err);
+      setSongs([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const processData = () => {
     let result = [...users]; 
 
-    // 1. Filter by Search
+    // Filter by Search
     if (searchQuery) {
       const lowerQuery = searchQuery.toLowerCase();
       result = result.filter(u => 
@@ -80,7 +106,7 @@ export default function AdminDashboard() {
       );
     }
 
-    // 2. Filter by Date 
+    // Filter by Date 
     if (startDate) {
       result = result.filter(u => {
         if(!u.registered_date) return false; 
@@ -96,7 +122,7 @@ export default function AdminDashboard() {
 
     setFilteredUsers(result);
 
-    // 3. Prepare Chart Data
+    // Prepare Chart Data
     const dateCounts = {};
     result.forEach(u => {
       const date = u.registered_date ? u.registered_date : "N/A";
@@ -133,6 +159,29 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleAddSong = async (e) => {
+      e.preventDefault();
+      
+      const formData = new FormData();
+      formData.append("title", newSong.title);
+      formData.append("artist", newSong.artist);
+      formData.append("mood", newSong.mood);
+      formData.append("language", newSong.language);
+      formData.append("file", newSong.file);
+
+      try {
+        const res = await axios.post("http://127.0.0.1:5000/admin/add-song", formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        alert(res.data.message);
+        setNewSong({ title: "", artist: "", mood: "Happy", language: "", file: null });
+        setShowAddSong(false);
+        fetchSongs();
+      } catch (err) {
+        alert(err.response?.data?.error || "Failed to upload song");
+      }
+  };
+
   const handleDeleteUser = async (id) => {
     if (window.confirm("Are you sure you want to delete this user?")) {
       try {
@@ -142,6 +191,17 @@ export default function AdminDashboard() {
         alert("Failed to delete user");
       }
     }
+  };
+
+  const handleDeleteSong = async (id) => {
+      if (window.confirm("Are you sure you want to delete this song?")) {
+        try {
+          await axios.post("http://127.0.0.1:5000/admin/delete-song", { id });
+          fetchSongs();
+        } catch (err) {
+          alert("Failed to delete song");
+        }
+      }
   };
 
   const handleEditClick = (user) => {
@@ -163,11 +223,17 @@ export default function AdminDashboard() {
     }
   };
 
+  // Filter songs based on search
+  const filteredSongs = songs.filter(s => 
+    s.title.toLowerCase().includes(songSearchQuery.toLowerCase()) || 
+    s.artist.toLowerCase().includes(songSearchQuery.toLowerCase())
+  );
+
   return (
     <div className="music-home-container" style={{background: "#f0f2f5"}}>
       <nav className="music-nav" style={{borderTop: "5px solid #8e44ad"}}>
         <div className="music-logo" onClick={() => navigate("/admin-home")} style={{cursor:'pointer'}}>
-            Moodify <span style={{fontSize: "0.8rem", color: "#8e44ad"}}>ADMIN</span>
+            Moodify 
         </div>
         
         <div className="profile-container">
@@ -209,16 +275,16 @@ export default function AdminDashboard() {
                 User Management
             </button>
             <button 
-                className={`tab-btn ${activeTab === 'emotions' ? 'active' : ''}`} 
-                onClick={() => setActiveTab('emotions')}
-            >
-                Emotion Management
-            </button>
-            <button 
                 className={`tab-btn ${activeTab === 'music' ? 'active' : ''}`} 
                 onClick={() => setActiveTab('music')}
             >
                 Music Management
+            </button>
+            <button 
+                className={`tab-btn ${activeTab === 'emotions' ? 'active' : ''}`} 
+                onClick={() => setActiveTab('emotions')}
+            >
+                Emotion Analytics
             </button>
         </div>
 
@@ -226,7 +292,7 @@ export default function AdminDashboard() {
         {activeTab === "users" && (
           <div className="admin-dashboard-layout">
             
-            {/* 1. Global Date Filter Section */}
+            {/* Global Date Filter Section */}
             <div className="music-card full-width-card filter-card-row">
                 <span className="filter-label">📅 Filter Records by Date:</span>
                 <div className="date-inputs-wrapper">
@@ -244,7 +310,7 @@ export default function AdminDashboard() {
                 </div>
             </div>
 
-            {/* 2. Graph Section */}
+            {/* Graph Section */}
             <div className="music-card full-width-card" style={{ marginBottom: "40px", textAlign: "left" }}>
               <h3>User Registration Trends</h3>
               <div style={{width: '100%', height: 350, marginTop: '20px'}}>
@@ -261,7 +327,7 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* 3. Table Controls */}
+            {/* Table Controls */}
             <div className="table-controls-bar">
                 <div className="search-wrapper">
                     <input 
@@ -280,7 +346,7 @@ export default function AdminDashboard() {
                 </button>
             </div>
 
-            {/* 4. Add User Form */}
+            {/* Add User Form */}
             {showAddUser && (
                 <div className="music-card full-width-card slide-down" style={{marginBottom: "30px", textAlign: "left", background: "#fdfdfd", border: "1px solid #eee"}}>
                     <h3 style={{marginBottom: '20px', color: '#27ae60'}}>Create New Account</h3>
@@ -317,7 +383,7 @@ export default function AdminDashboard() {
                 </div>
             )}
 
-            {/* 5. Users Table */}
+            {/* Users Table */}
             <div className="music-card full-width-card" style={{ textAlign: "left", cursor: "default", overflowX: "auto" }}>
               <h3 style={{ borderBottom: "2px solid #f0f0f0", paddingBottom: "15px" }}>Registered Users List</h3>
               
@@ -394,16 +460,125 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* PLACEHOLDERS FOR OTHER TABS */}
-        {activeTab === "emotions" && (
-            <div className="music-card full-width-card">
-                <h3>Emotion Management Dashboard</h3>
+        {/* MUSIC MANAGEMENT TAB */}
+        {activeTab === "music" && (
+            <div className="admin-dashboard-layout">
+                
+                {/* Controls for Songs */}
+                <div className="table-controls-bar">
+                    <div className="search-wrapper">
+                        <input 
+                            type="text" 
+                            placeholder="Search songs by title or artist..." 
+                            value={songSearchQuery}
+                            onChange={(e) => setSongSearchQuery(e.target.value)}
+                            className="admin-search-input"
+                        />
+                    </div>
+                    <button 
+                        className="music-main-btn add-user-btn" 
+                        onClick={() => setShowAddSong(!showAddSong)}
+                    >
+                        {showAddSong ? "✕ Cancel" : "+ Add New Song"}
+                    </button>
+                </div>
+
+                {/* Add Song Form */}
+                {showAddSong && (
+                    <div className="music-card full-width-card slide-down" style={{marginBottom: "30px", textAlign: "left", background: "#fdfdfd", border: "1px solid #eee"}}>
+                        <h3 style={{marginBottom: '20px', color: '#27ae60'}}>Upload New Song</h3>
+                        <form onSubmit={handleAddSong}>
+                            <div style={{display: 'flex', gap: '20px', flexWrap: 'wrap'}}>
+                                <div className="music-input-group" style={{flex: 1}}>
+                                    <label>Song Title</label>
+                                    <input required value={newSong.title} onChange={e => setNewSong({...newSong, title: e.target.value})} placeholder="e.g. Shape of You" />
+                                </div>
+                                <div className="music-input-group" style={{flex: 1}}>
+                                    <label>Artist</label>
+                                    <input required value={newSong.artist} onChange={e => setNewSong({...newSong, artist: e.target.value})} placeholder="e.g. Ed Sheeran" />
+                                </div>
+                            </div>
+                            <div style={{display: 'flex', gap: '20px', flexWrap: 'wrap'}}>
+                                <div className="music-input-group" style={{flex: 1}}>
+                                    <label>Mood Category</label>
+                                    <select 
+                                        style={{width: '100%', padding: '15px', borderRadius: '30px', border: '1px solid #ddd', outline: 'none', background: '#fff'}}
+                                        value={newSong.mood} 
+                                        onChange={e => setNewSong({...newSong, mood: e.target.value})}
+                                    >
+                                        {emotionOptions.map(emo => (
+                                            <option key={emo} value={emo}>{emo}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="music-input-group" style={{flex: 1}}>
+                                    <label>Language</label>
+                                    <input required value={newSong.language} onChange={e => setNewSong({...newSong, language: e.target.value})} placeholder="e.g. English" />
+                                </div>
+                            </div>
+                            <div className="music-input-group">
+                                <label>MP3 File</label>
+                                <input type="file" accept=".mp3" required onChange={e => setNewSong({...newSong, file: e.target.files[0]})} />
+                            </div>
+                            <button className="music-main-btn" type="submit" style={{maxWidth: '200px'}}>Upload Song</button>
+                        </form>
+                    </div>
+                )}
+
+                {/* Songs List Table */}
+                <div className="music-card full-width-card" style={{ textAlign: "left", cursor: "default", overflowX: "auto" }}>
+                  <h3 style={{ borderBottom: "2px solid #f0f0f0", paddingBottom: "15px" }}>Music Library</h3>
+                  
+                  {loading ? (
+                    <div style={{textAlign: 'center', padding: '40px', color: '#666'}}>Loading music...</div>
+                  ) : filteredSongs.length === 0 ? (
+                    <div style={{ padding: "50px", textAlign: "center", color: "#888" }}>
+                      <p>No songs found.</p>
+                    </div>
+                  ) : (
+                    <table style={{ width: "100%", marginTop: "10px", borderCollapse: "collapse" }}>
+                      <thead>
+                        <tr style={{ textAlign: "left", color: "#8e44ad", fontSize: '0.95rem' }}>
+                          <th style={{ padding: "15px", borderBottom: "2px solid #eee" }}>S.N.</th>
+                          <th style={{ padding: "15px", borderBottom: "2px solid #eee" }}>Title</th>
+                          <th style={{ padding: "15px", borderBottom: "2px solid #eee" }}>Artist</th>
+                          <th style={{ padding: "15px", borderBottom: "2px solid #eee" }}>Category</th>
+                          <th style={{ padding: "15px", borderBottom: "2px solid #eee" }}>Language</th>
+                          <th style={{ padding: "15px", borderBottom: "2px solid #eee" }}>File</th>
+                          <th style={{ padding: "15px", borderBottom: "2px solid #eee" }}>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredSongs.map((song, index) => (
+                          <tr key={song.id} className="table-row">
+                            <td style={{ padding: "15px" }}>{index + 1}</td>
+                            <td style={{ padding: "15px", fontWeight: "600" }}>{song.title}</td>
+                            <td style={{ padding: "15px" }}>{song.artist}</td>
+                            <td style={{ padding: "15px" }}>
+                                <span className="mood-badge" style={{backgroundColor: '#e8daef', color: '#8e44ad', border: 'none'}}>
+                                    {song.mood}
+                                </span>
+                            </td>
+                            <td style={{ padding: "15px" }}>{song.language}</td>
+                            <td style={{ padding: "15px" }}>
+                                <audio controls src={`http://127.0.0.1:5000/songs/${song.file_path}`} style={{height: '30px', width: '200px'}} />
+                            </td>
+                            <td style={{ padding: "15px" }}>
+                               <button className="action-btn delete" onClick={() => handleDeleteSong(song.id)}>Delete</button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+
             </div>
         )}
 
-        {activeTab === "music" && (
+        {activeTab === "emotions" && (
             <div className="music-card full-width-card">
-                <h3>Music Management Dashboard</h3>
+                <h3>Emotion Management Dashboard</h3>
             </div>
         )}
 
