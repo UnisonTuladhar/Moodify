@@ -29,7 +29,6 @@ UPLOAD_FOLDER = 'static/songs'
 ALLOWED_EXTENSIONS = {'mp3'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# Create folder if it doesn't exist
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
@@ -39,14 +38,10 @@ def allowed_file(filename):
 
 mail = Mail(app)
 
-# Path for the trained model and Haar Cascade
+# Path for the trained model
 MODEL_PATH = 'emotion_cnn_model.h5'
 CASCADE_PATH = 'haarcascade_frontalface_default.xml'
-
-# Dataset folders
 emotion_labels = ['Angry', 'Disgust', 'Fear', 'Happy', 'Neutral', 'Sad', 'Surprise']
-
-# Global variable to track the latest mood for the frontend timer
 last_predicted_mood = "None"
 
 try:
@@ -70,30 +65,22 @@ class VideoCamera:
         if not success:
             return None
         
-        # Convert frame to Grayscale 
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        # Detect faces in the frame
         faces = face_classifier.detectMultiScale(gray, 1.3, 5)
 
-        # If no face is detected, reset the mood tracking
         if len(faces) == 0:
             last_predicted_mood = "None"
 
         for (x, y, w, h) in faces:
-            # Draw rectangle around the face
             cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 255), 2)
-            
-            # Crop and resize the face to 48x48
             roi_gray = gray[y:y+h, x:x+w]
             roi_gray = cv2.resize(roi_gray, (48, 48), interpolation=cv2.INTER_AREA)
 
             if np.sum([roi_gray]) != 0:
-                # Pre-process for the model
                 roi = roi_gray.astype('float') / 255.0
                 roi = img_to_array(roi)
                 roi = np.expand_dims(roi, axis=0)
 
-                # Predict Emotion
                 prediction = classifier.predict(roi)[0]
                 label = emotion_labels[prediction.argmax()]
                 last_predicted_mood = label
@@ -103,7 +90,6 @@ class VideoCamera:
             else:
                 cv2.putText(frame, 'No Face Found', (20, 60), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
 
-        # Encode back to JPEG for the web feed
         ret, jpeg = cv2.imencode('.jpg', frame)
         return jpeg.tobytes()
 
@@ -118,8 +104,7 @@ def gen(camera):
 
 @app.route('/video_feed')
 def video_feed():
-    return Response(gen(VideoCamera()),
-                    mimetype='multipart/x-mixed-replace; boundary=frame')
+    return Response(gen(VideoCamera()), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 @app.route('/get_mood', methods=['GET'])
 def get_mood():
@@ -159,7 +144,6 @@ def get_emotion_history():
     query = "SELECT emotion, DATE_FORMAT(detected_at, '%Y-%m-%d %H:%i') as date FROM emotion_history WHERE email=%s"
     params = [email]
 
-    # Add filters 
     if mood_filter and mood_filter != "All":
         query += " AND emotion = %s"
         params.append(mood_filter)
@@ -203,18 +187,15 @@ def add_song():
         
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
-            # Create unique filename to avoid overwrites
             unique_filename = f"{int(datetime.now().timestamp())}_{filename}"
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], unique_filename))
             
-            # Save to Database
             db = get_db_connection()
             cursor = db.cursor()
             query = "INSERT INTO songs (title, artist, mood, language, file_path) VALUES (%s, %s, %s, %s, %s)"
             cursor.execute(query, (title, artist, mood, language, unique_filename))
             db.commit()
             db.close()
-            
             return jsonify({"message": "Song uploaded successfully!"}), 201
         else:
             return jsonify({"error": "Invalid file type (only MP3 allowed)"}), 400
@@ -242,26 +223,20 @@ def get_all_songs():
 def delete_song():
     data = request.json
     song_id = data.get('id')
-    
     db = get_db_connection()
     cursor = db.cursor(dictionary=True)
     try:
-        # Get filename first to delete file from folder
         cursor.execute("SELECT file_path FROM songs WHERE id=%s", (song_id,))
         result = cursor.fetchone()
-        
         if result:
             file_path = os.path.join(app.config['UPLOAD_FOLDER'], result['file_path'])
             if os.path.exists(file_path):
-                os.remove(file_path) # Delete actual file
-            
-            # Delete DB Record
+                os.remove(file_path)
             cursor.execute("DELETE FROM songs WHERE id=%s", (song_id,))
             db.commit()
             return jsonify({"message": "Song deleted successfully"}), 200
         else:
             return jsonify({"error": "Song not found"}), 404
-            
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     finally:
@@ -272,11 +247,10 @@ def delete_song():
 def get_playlist_by_mood():
     data = request.json
     mood = data.get('mood')
-    
     db = get_db_connection()
     cursor = db.cursor(dictionary=True)
     try:
-        query = "SELECT * FROM songs WHERE mood=%s ORDER BY RAND() LIMIT 10" # Random shuffle
+        query = "SELECT * FROM songs WHERE mood=%s ORDER BY RAND() LIMIT 10"
         cursor.execute(query, (mood,))
         songs = cursor.fetchall()
         return jsonify(songs), 200
@@ -289,7 +263,6 @@ def get_playlist_by_mood():
 def serve_songs(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
-# For hassed passwords and OTP generation
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
@@ -301,7 +274,7 @@ def generate_otp():
 def register_step1():
     data = request.json
     username = data["username"]
-    email = data["email"]
+    email = data["email"].lower().strip()
     password = hash_password(data["password"])
     otp = generate_otp()
 
@@ -336,8 +309,8 @@ def register_step1():
 @app.post("/verify-registration")
 def verify_registration():
     data = request.json
-    email = data["email"]
-    user_otp = data["otp"]
+    email = data["email"].lower().strip()
+    user_otp = data["otp"].strip()
     db = get_db_connection()
     cursor = db.cursor()
     cursor.execute("SELECT * FROM users WHERE email=%s AND otp=%s", (email, user_otp))
@@ -355,7 +328,7 @@ def verify_registration():
 @app.post("/login")
 def login():
     data = request.json
-    email = data.get("email")
+    email = data.get("email", "").lower().strip()
     password = hash_password(data.get("password", ""))
     db = get_db_connection()
     cursor = db.cursor(dictionary=True)
@@ -377,7 +350,7 @@ def login():
 def admin_add_user():
     data = request.json
     username = data["username"]
-    email = data["email"]
+    email = data["email"].lower().strip()
     password = hash_password(data["password"])
     is_admin = int(data["is_admin"]) 
 
@@ -408,16 +381,13 @@ def get_all_users():
         users = cursor.fetchall()
         return jsonify(users), 200
     except Exception as e:
-        print(f"Error fetching users with date (Likely missing 'created_at' column): {e}")
         try:
             cursor.close()
             cursor = db.cursor(dictionary=True)
             cursor.execute("SELECT id, username, email, is_admin FROM users")
             users = cursor.fetchall()
-            
             for user in users:
                 user['registered_date'] = '2024-01-01' 
-            
             return jsonify(users), 200
         except Exception as e2:
             return jsonify({"error": str(e2)}), 500
@@ -447,7 +417,7 @@ def admin_edit_user():
     data = request.json
     user_id = data.get("id")
     username = data.get("username")
-    email = data.get("email")
+    email = data.get("email").lower().strip()
     
     db = get_db_connection()
     cursor = db.cursor()
@@ -463,7 +433,7 @@ def admin_edit_user():
 # Profile View 
 @app.route("/user/profile", methods=["GET"])
 def get_profile():
-    email = request.args.get('email')
+    email = request.args.get('email').lower().strip()
     db = get_db_connection()
     cursor = db.cursor(dictionary=True)
     cursor.execute("SELECT username, email FROM users WHERE email=%s", (email,))
@@ -477,9 +447,9 @@ def get_profile():
 @app.post("/user/update-profile")
 def update_profile():
     data = request.json
-    old_email = data["old_email"]
+    old_email = data["old_email"].lower().strip()
     new_username = data["username"]
-    new_email = data["email"]
+    new_email = data["email"].lower().strip()
     db = get_db_connection()
     cursor = db.cursor()
     try:
@@ -496,7 +466,7 @@ def update_profile():
 @app.post("/user/change-password")
 def change_password():
     data = request.json
-    email = data["email"]
+    email = data["email"].lower().strip()
     current_password = hash_password(data["current_password"])
     new_password = hash_password(data["new_password"])
 
@@ -514,11 +484,102 @@ def change_password():
         db.close()
         return jsonify({"error": "Current password is incorrect!"}), 400
 
+# Forgot Password 
+@app.post("/forgot-password")
+def forgot_password():
+    data = request.json
+    email = data.get("email", "").strip().lower()
+
+    db = get_db_connection()
+    cursor = db.cursor(dictionary=True)
+    
+    try:
+        cursor.execute("SELECT * FROM users WHERE email=%s", (email,))
+        user = cursor.fetchone()
+
+        if user:
+            otp = generate_otp()
+            print(f"Generated OTP for {email}: {otp}") 
+            cursor.execute("UPDATE users SET otp=%s WHERE email=%s", (otp, email))
+            db.commit()
+
+            msg = Message('Moodify Password Reset Code', sender='tuladharunison@gmail.com', recipients=[email])
+            msg.body = f"Your password reset code is: {otp}"
+            mail.send(msg)
+            return jsonify({"message": "OTP sent to your email"}), 200
+        else:
+            print(f"User not found for email: {email}") 
+            return jsonify({"error": "User not found"}), 404
+    except Exception as e:
+        print(f"Error in forgot-password: {e}") 
+        return jsonify({"error": str(e)}), 500
+    finally:
+        db.close()
+
+# Verify OTP for Forgot Password
+@app.post("/verify-forgot-otp")
+def verify_forgot_otp():
+    data = request.json
+    email = data.get("email", "").strip().lower()
+    otp = data.get("otp", "").strip()
+    
+    print(f"Verifying OTP for {email}. Input OTP: {otp}") 
+
+    db = get_db_connection()
+    cursor = db.cursor(dictionary=True)
+    
+    try:
+        cursor.execute("SELECT * FROM users WHERE email=%s AND otp=%s", (email, otp))
+        user = cursor.fetchone()
+        
+        if user:
+            print("OTP Verified Successfully") 
+            return jsonify({"message": "OTP Verified"}), 200
+        else:
+            cursor.execute("SELECT otp FROM users WHERE email=%s", (email,))
+            actual_user = cursor.fetchone()
+            if actual_user:
+                print(f"Failed. Actual OTP in DB is: {actual_user['otp']}")
+            else:
+                print("Failed. User not found.")
+            
+            return jsonify({"error": "Invalid OTP"}), 400
+    except Exception as e:
+        print(f"Error in verify-otp: {e}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        db.close()
+
+# Reset Password Logic
+@app.post("/reset-password")
+def reset_password():
+    data = request.json
+    email = data.get("email", "").strip().lower()
+    new_password = hash_password(data.get("new_password"))
+
+    db = get_db_connection()
+    cursor = db.cursor(dictionary=True)
+
+    try:
+        cursor.execute("SELECT * FROM users WHERE email=%s", (email,))
+        user = cursor.fetchone()
+
+        if user:
+            cursor.execute("UPDATE users SET password=%s, otp=NULL WHERE email=%s", (new_password, email))
+            db.commit()
+            return jsonify({"message": "Password reset successfully!"}), 200
+        else:
+            return jsonify({"error": "User not found"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        db.close()
+
 # Delete Account 
 @app.post("/user/delete-account")
 def delete_account():
     data = request.json
-    email = data["email"]
+    email = data["email"].lower().strip()
     password = hash_password(data["password"])
 
     db = get_db_connection()
