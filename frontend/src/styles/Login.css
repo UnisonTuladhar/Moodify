@@ -9,7 +9,6 @@
 
 .music-left {
     flex: 1;
-    /* This makes the image fill the entire panel perfectly */
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -17,7 +16,6 @@
     flex-direction: column;
 }
 
-/* Optional: Adds a subtle dark tint so the text is easier to read over the image */
 .music-overlay {
     background: linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0) 50%);
     height: 100%;
@@ -38,7 +36,7 @@
     flex-direction: column;
     padding: 50px;
     position: relative;
-    z-index: 2; /* Ensures the white panel shadow overlaps the image */
+    z-index: 2; 
     box-shadow: -10px 0 30px rgba(0,0,0,0.2);
 }
 
@@ -57,6 +55,30 @@
     border: 1px solid #ddd;
     font-size: 1rem;
     outline: none;
+}
+
+.otp-container {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.otp-input {
+    width: 100%;
+    height: 50px;
+    font-size: 1.5rem;
+    text-align: center;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+    background: #f9f9f9;
+    outline: none;
+}
+
+.otp-input:focus {
+    border-color: #ff4e00;
+    background: #fff;
+    box-shadow: 0 0 5px rgba(255, 78, 0, 0.2);
 }
 
 .music-links-row { margin: 10px 0 25px 15px; }

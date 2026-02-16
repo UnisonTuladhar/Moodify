@@ -8,28 +8,79 @@ export default function Register() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [otp, setOtp] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState(""); 
+  
+  const [otp, setOtp] = useState(new Array(6).fill(""));
+  
+  const [error, setError] = useState(""); 
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate(); 
 
   const requestOtp = async () => {
-    if(!username || !email || !password) return alert("Please fill all fields");
+    setError(""); 
+
+    if(!username || !email || !password || !confirmPassword) {
+      setError("Please fill all fields");
+      return;
+    }
+
+    if(password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    setIsLoading(true);
     try {
       const res = await axios.post("http://127.0.0.1:5000/register-step1", { username, email, password });
-      alert(res.data.message);
       setStep(2); 
-    } catch (err) { alert(err.response?.data?.error || "Error sending OTP"); }
+      setError("");
+    } catch (err) { 
+      setError(err.response?.data?.error || "Error sending OTP"); 
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleOtpChange = (element, index) => {
+    if (isNaN(element.value)) return false;
+
+    setOtp([...otp.map((d, idx) => (idx === index ? element.value : d))]);
+
+    if (element.nextSibling) {
+      element.nextSibling.focus();
+    }
+  };
+
+  const handleKeyDown = (e, index) => {
+      if (e.key === "Backspace") {
+          if (e.target.previousSibling && otp[index] === "") {
+              e.target.previousSibling.focus();
+          }
+      }
   };
 
   const verifyAndRegister = async () => {
+    setError("");
+    const finalOtp = otp.join("");
+
+    if(finalOtp.length < 6) {
+      setError("Please enter the 6-digit code");
+      return;
+    }
+
+    setIsLoading(true);
     try {
-      await axios.post("http://127.0.0.1:5000/verify-registration", { email, otp });
+      await axios.post("http://127.0.0.1:5000/verify-registration", { email, otp: finalOtp });
       navigate("/login"); 
-    } catch (err) { alert("Invalid OTP"); }
+    } catch (err) { 
+      setError(err.response?.data?.error || "Invalid OTP"); 
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <div className="music-container">
-      {/* Left Side with Background Image Path */}
       <div 
         className="music-left" 
         style={{ backgroundImage: `url(${require("../images/Login.jpg")})` }}
@@ -42,7 +93,6 @@ export default function Register() {
         </div>
       </div>
 
-      {/* Right Side */}
       <div className="music-right">
         <div className="music-top-nav">
            <div className="music-logo">Moodify</div>
@@ -51,31 +101,57 @@ export default function Register() {
 
         <div className="music-form-box">
           <h2>{step === 1 ? "Sign Up" : "Verification"}</h2>
+          
           {step === 1 ? (
             <>
               <div className="music-input-group">
-                <input placeholder="Username" onChange={e => setUsername(e.target.value)} />
+                <input placeholder="Username" onChange={e => setUsername(e.target.value)} onFocus={() => setError("")} />
               </div>
               <div className="music-input-group">
-                <input placeholder="Email" onChange={e => setEmail(e.target.value)} />
+                <input placeholder="Email" onChange={e => setEmail(e.target.value)} onFocus={() => setError("")} />
               </div>
               <div className="music-input-group">
-                <input type="password" placeholder="Password" onChange={e => setPassword(e.target.value)} />
+                <input type="password" placeholder="Password" onChange={e => setPassword(e.target.value)} onFocus={() => setError("")} />
               </div>
-              <button className="music-main-btn" onClick={requestOtp}>Register Now</button>
+              <div className="music-input-group">
+                <input type="password" placeholder="Confirm Password" onChange={e => setConfirmPassword(e.target.value)} onFocus={() => setError("")} />
+              </div>
+              
+              {/* Error Message */}
+              {error && <p style={{color: '#e74c3c', fontSize: '0.9rem', marginBottom: '15px', fontWeight: '600'}}>{error}</p>}
+
+              <button className="music-main-btn" onClick={requestOtp} disabled={isLoading}>
+                {isLoading ? "Sending..." : "Register Now"}
+              </button>
             </>
           ) : (
             <>
               <p style={{marginBottom: '20px', color: '#555'}}>Code sent to {email}</p>
-              <div className="music-input-group">
-                <input 
-                  placeholder="Enter OTP" 
-                  value={otp} // Keeps the box empty and follows logic
-                  onChange={e => setOtp(e.target.value)} 
-                />
+              
+              <div className="otp-container">
+                {otp.map((data, index) => (
+                  <input
+                    className="otp-input"
+                    type="text"
+                    name="otp"
+                    maxLength="1"
+                    key={index}
+                    value={data}
+                    onChange={(e) => handleOtpChange(e.target, index)}
+                    onKeyDown={(e) => handleKeyDown(e, index)}
+                    onFocus={(e) => { e.target.select(); setError(""); }}
+                  />
+                ))}
               </div>
-              <button className="music-main-btn" onClick={verifyAndRegister}>Verify Account</button>
-              <p className="music-back-link" onClick={() => setStep(1)}>Go back</p>
+
+              {/* Error Message for OTP */}
+              {error && <p style={{color: '#e74c3c', fontSize: '0.9rem', marginBottom: '15px', fontWeight: '600', textAlign: 'center'}}>{error}</p>}
+
+              <button className="music-main-btn" onClick={verifyAndRegister} disabled={isLoading}>
+                {isLoading ? "Verifying..." : "Verify Account"}
+              </button>
+              
+              <p className="music-back-link" onClick={() => { setStep(1); setError(""); }}>Go back</p>
             </>
           )}
         </div>
