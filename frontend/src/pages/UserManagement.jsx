@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import "../styles/Home.css"; 
+import "../styles/Shared.css";
+import "../styles/Admin.css";
 
 export default function UserManagement() {
   const navigate = useNavigate();

@@ -1,0 +1,277 @@
+.dashboard-content {
+    max-width: 1300px;
+    margin: 0 auto;
+    padding: 30px;
+}
+
+.dashboard-back-container {
+    width: 100%;
+    margin: 20px 0 0 0;
+    padding: 0 60px; 
+    box-sizing: border-box;
+}
+
+.back-link-btn {
+    background: transparent;
+    border: 1px solid #ccc;
+    padding: 8px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: 600;
+    color: #555;
+    transition: 0.3s;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.9rem;
+}
+
+.back-link-btn:hover {
+    border-color: #ff4e00;
+    color: #ff4e00;
+    background: white;
+    transform: translateX(-3px);
+}
+
+.dashboard-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.dashboard-header h1 {
+    font-size: 2.5rem;
+    color: #1a1614;
+    margin-bottom: 10px;
+}
+
+.dashboard-header p {
+    color: #666;
+}
+
+/* TABS */
+.dashboard-tabs {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 40px;
+}
+
+.tab-btn {
+    padding: 12px 30px;
+    border: none;
+    background: #e0e0e0;
+    color: #666;
+    font-size: 1rem;
+    font-weight: 700;
+    border-radius: 30px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.tab-btn.active {
+    background: linear-gradient(90deg, #ff4e00, #ec008c);
+    color: white;
+    box-shadow: 0 5px 15px rgba(236, 0, 140, 0.3);
+}
+
+/* FILTERS - Updated to be less congested */
+.dashboard-filters {
+    display: flex;
+    gap: 30px; /* Increased gap */
+    justify-content: space-between; /* Spread items out */
+    margin-bottom: 30px;
+    background: white;
+    padding: 30px; /* More padding */
+    border-radius: 20px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.03);
+    flex-wrap: wrap;
+    align-items: flex-end;
+}
+
+.filter-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    text-align: left;
+    flex: 1; /* Allows boxes to take up equal available space */
+    min-width: 200px; /* Ensure they don't get too small */
+}
+
+.filter-item label {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #444;
+    margin-left: 5px;
+}
+
+.dashboard-filters select, 
+.dashboard-filters input {
+    width: 100%; /* Make input fill its container */
+    padding: 14px 18px; /* Larger click area */
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    outline: none;
+    font-size: 1rem;
+    background: #f9f9f9;
+    box-sizing: border-box; /* Ensures padding doesn't affect width */
+    transition: 0.3s;
+}
+
+.dashboard-filters select:focus, 
+.dashboard-filters input:focus {
+    border-color: #8e44ad;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(142, 68, 173, 0.1);
+}
+
+/* CHARTS */
+.charts-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    margin-bottom: 40px;
+}
+
+.chart-card {
+    background: white;
+    padding: 25px;
+    border-radius: 25px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.03);
+    text-align: center;
+    border: 1px solid #f0f0f0;
+}
+
+.chart-card h4 {
+    color: #333;
+    margin-bottom: 20px;
+    font-size: 1.2rem;
+}
+
+/* TABLE */
+.history-table-card {
+    background: white;
+    padding: 30px;
+    border-radius: 25px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.03);
+    border: 1px solid #f0f0f0;
+}
+
+.history-table-card h3 {
+    margin-bottom: 20px;
+    border-bottom: 2px solid #f4f4f4;
+    padding-bottom: 15px;
+    color: #333;
+    text-align: left;
+}
+
+.table-responsive {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 600px;
+}
+
+th {
+    text-align: left;
+    padding: 15px;
+    color: #888;
+    border-bottom: 1px solid #eee;
+    font-weight: 600;
+}
+
+td {
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+    color: #333;
+    font-size: 0.95rem;
+}
+
+.mood-badge {
+    border: 1px solid;
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    text-transform: capitalize;
+    font-weight: 600;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 80px;
+    background: white;
+    border-radius: 25px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.03);
+    border: 1px solid #f0f0f0;
+}
+
+/* PAGINATION */
+.pagination-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-top: 25px;
+}
+
+.page-btn {
+    border: none;
+    background: #f0f0f0;
+    color: #555;
+    padding: 8px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: 0.2s;
+    min-width: 35px;
+}
+
+.page-btn:hover:not(:disabled) {
+    background: #e0e0e0;
+}
+
+.page-btn.active {
+    background: linear-gradient(90deg, #ff4e00, #ec008c);
+    color: white;
+    box-shadow: 0 4px 10px rgba(236, 0, 140, 0.2);
+}
+
+.page-btn.nav {
+    background: transparent;
+    border: 1px solid #ddd;
+    padding: 8px 16px;
+}
+
+.page-btn.nav:hover:not(:disabled) {
+    border-color: #888;
+    background: white;
+}
+
+.page-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.page-dots {
+    color: #999;
+    padding: 0 5px;
+}
+
+@media (max-width: 900px) {
+    .charts-row {
+        grid-template-columns: 1fr;
+    }
+    .dashboard-back-container {
+        padding: 0 20px;
+    }
+    .dashboard-filters {
+        flex-direction: column;
+        gap: 15px;
+    }
+    .filter-item {
+        width: 100%;
+    }
+}

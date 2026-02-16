@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import "../styles/Home.css";
+import "../styles/Shared.css";
+import "../styles/Admin.css";
 import profileImg from "../images/profile.jpg"; 
 
 export default function AdminHome() {
@@ -15,10 +16,12 @@ export default function AdminHome() {
 
   return (
     <div className="music-home-container" style={{background: "#f0f2f5"}}>
+      {/* Admin Navbar */}
       <nav className="music-nav" style={{borderTop: "5px solid #8e44ad"}}>
-        <div className="music-logo">Moodify <span style={{fontSize: "0.8rem", color: "#8e44ad"}}>ADMIN PANEL</span></div>
+        <div className="music-logo" onClick={() => navigate("/admin-home")} style={{cursor:'pointer'}}>
+          Moodify 
+        </div>
         
-        {/* Profile Icon Dropdown */}
         <div className="profile-container">
           <img 
             src={profileImg} 
@@ -28,24 +31,38 @@ export default function AdminHome() {
           />
           {showDropdown && (
             <div className="profile-dropdown">
-              <p onClick={() => navigate("/settings")}>Settings</p>
+              <p onClick={() => navigate("/admin-dashboard")}>Dashboard</p>
+              <p onClick={() => navigate("/admin-settings")}>Settings</p>
               <p onClick={handleLogout} className="dropdown-logout">Logout</p>
             </div>
           )}
         </div>
       </nav>
 
+      {/* Admin Home Content */}
       <div className="music-home-content">
+        <div className="admin-status-label">ADMIN PANEL</div>
+        
         <header className="music-welcome-header">
-          <h1>System Overview</h1>
-          <p>Welcome back, Admin <strong>{adminName}</strong>.</p>
+          <h1>Welcome Back, <span className="highlight-text">{adminName}</span></h1>
+          <p className="hero-subtitle">
+            Manage users, monitor system analytics, and configure application settings from here.
+          </p>
         </header>
 
-        <div className="music-hub-grid">
-           <div className="music-card" onClick={() => navigate("/manage-users")}>
-            <h3>User Management</h3>
-            <p>View registered users.</p>
-            <button className="music-card-btn">Manage Users</button>
+        <div className="music-hub-grid" style={{marginTop: '50px'}}>
+           {/* Dashboard */}
+           <div className="music-card" onClick={() => navigate("/admin-dashboard")}>
+            <div style={{fontSize: '3rem', marginBottom: '15px'}}></div>
+            <h3>System Dashboard</h3>
+            <button className="music-card-btn">Go to Dashboard</button>
+          </div>
+
+          {/* Settings */}
+          <div className="music-card" onClick={() => navigate("/admin-settings")}>
+            <div style={{fontSize: '3rem', marginBottom: '15px'}}></div>
+            <h3>Admin Settings</h3>
+            <button className="music-card-btn">Open Settings</button>
           </div>
         </div>
       </div>

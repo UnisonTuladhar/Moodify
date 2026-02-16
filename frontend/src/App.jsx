@@ -6,8 +6,11 @@ import ForgotPassword from "./pages/ForgotPassword";
 import Dashboard from "./pages/Dashboard"; 
 import Settings from "./pages/Settings"; 
 import AdminHome from "./pages/AdminHome";
+import AdminDashboard from "./pages/AdminDashboard"; 
+import AdminSettings from "./pages/AdminSettings"; 
 import UserManagement from "./pages/UserManagement";
 import MoodDetection from "./pages/MoodDetection"; 
+import AboutUs from "./pages/AboutUs";
 
 export default function App() {
   return (
@@ -17,11 +20,16 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} /> 
+
         <Route path="/home" element={<Home />} /> 
+        <Route path="/about" element={<AboutUs />} />
          <Route path="/detect-mood" element={<MoodDetection />} />
         <Route path="/dashboard" element={<Dashboard />} /> 
         <Route path="/settings" element={<Settings />} />  
+
         <Route path="/admin-home" element={<AdminHome />} />
+        <Route path="/admin-dashboard" element={<AdminDashboard />} />
+        <Route path="/admin-settings" element={<AdminSettings />} />
         <Route path="/manage-users" element={<UserManagement />} />
       </Routes>
     </BrowserRouter>

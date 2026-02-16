@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios"; 
+import "../styles/Shared.css";
 import "../styles/Home.css";
 import profileImg from "../images/profile.jpg"; 
 import Footer from "./Footer";
@@ -13,7 +14,7 @@ export default function Home() {
 
   const [liveMood, setLiveMood] = useState("Detecting...");
   const [confirmedMood, setConfirmedMood] = useState(null);
-  const [stabilityScore, setStabilityScore] = useState(0); // 0 to 5
+  const [stabilityScore, setStabilityScore] = useState(0); 
   const lastMoodRef = useRef("");
   const stabilityCountRef = useRef(0);
 
@@ -23,39 +24,7 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    let interval;
-    if (isCamOpen) {
-      interval = setInterval(async () => {
-        try {
-          const res = await axios.get("http://127.0.0.1:5000/get_mood");
-          const mood = res.data.mood;
-          setLiveMood(mood);
-
-          // Logic to check if mood remains same for 5 seconds
-          if (mood !== "None" && mood !== "No Face Found" && mood === lastMoodRef.current) {
-            stabilityCountRef.current += 1;
-          } else {
-            stabilityCountRef.current = 0;
-            lastMoodRef.current = mood;
-          }
-
-          setStabilityScore(stabilityCountRef.current);
-
-          if (stabilityCountRef.current >= 5) {
-            setConfirmedMood(mood);
-          }
-        } catch (err) {
-          console.error("Error fetching mood from backend");
-        }
-      }, 1000);
-    } else {
-      // Reset when camera closes
-      setStabilityScore(0);
-      setConfirmedMood(null);
-      stabilityCountRef.current = 0;
-    }
-    return () => clearInterval(interval);
-  }, [isCamOpen]);
+  }, []);
 
   const handleLogout = () => {
     localStorage.clear();
@@ -66,7 +35,7 @@ export default function Home() {
     <div className="music-home-container">
       {/* Navbar */}
       <nav className="music-nav">
-        <div className="music-logo">Moodify</div>
+        <div className="music-logo" onClick={() => navigate("/home")} style={{cursor:'pointer'}}>Moodify</div>
         
         <div className="profile-container">
           <img 
@@ -77,6 +46,7 @@ export default function Home() {
           />
           {showDropdown && (
             <div className="profile-dropdown">
+              <p onClick={() => navigate("/dashboard")}>Dashboard</p>
               <p onClick={() => navigate("/settings")}>Settings</p>
               <p onClick={handleLogout} className="dropdown-logout">Logout</p>
             </div>
@@ -85,7 +55,6 @@ export default function Home() {
       </nav>
       
       <div className="music-home-content">
-        {/* HERO SECTION */}
         <header className="music-welcome-header">
           <div className="hero-badge">AI Powered Emotion Recognition</div>
           <h1>Welcome back, <span className="highlight-text">{userName}</span>!</h1>
@@ -95,7 +64,6 @@ export default function Home() {
           </p>
           
           <div style={{ marginTop: "30px" }}>
-            {/* Action changed to navigate to separate page */}
             <button 
               className="music-main-btn large-btn" 
               onClick={() => navigate("/detect-mood")}
@@ -104,6 +72,8 @@ export default function Home() {
             </button>
           </div>
         </header>
+
+        <div className="section-divider"></div>
 
         {/* FEATURES SECTION */}
         <section className="features-section">
@@ -124,6 +94,31 @@ export default function Home() {
               <h3>Smart Playlists</h3>
               <p>Instantly receive music recommendations that match or enhance your current mood.</p>
             </div>
+          </div>
+        </section>
+
+        <div className="section-divider"></div>
+
+
+        {/* MOOD PREVIEW GALLERY */}
+        <section className="mood-gallery">
+          <h2 className="section-title">Explore Your Emotions</h2>
+          <div className="mood-grid">
+            <div className="mood-tile happy">😊 Happy</div>
+            <div className="mood-tile sad">😢 Sad</div>
+            <div className="mood-tile angry">😠 Angry</div>
+            <div className="mood-tile neutral">😐 Neutral</div>
+            <div className="mood-tile surprise">😲 Surprise</div>
+            <div className="mood-tile fear">😨 Fear</div>
+          </div>
+        </section>
+
+        {/* ACTION BANNER */}
+        <section className="cta-banner">
+          <div className="cta-content">
+            <h2>Track Your Emotional Journey</h2>
+            <p>Visualize your mood patterns over time and gain deeper insights into your well-being.</p>
+            <button className="cta-btn" onClick={() => navigate("/dashboard")}>View Mood Analytics</button>
           </div>
         </section>
       </div>
