@@ -25,7 +25,7 @@ app.config['MAIL_USE_TLS'] = False
 app.config['MAIL_USE_SSL'] = True
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024
 
-# --- FILE UPLOAD CONFIGURATION ---
+# FILE UPLOAD CONFIGURATION 
 UPLOAD_FOLDER = 'static/songs'
 ALLOWED_EXTENSIONS = {'mp3'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -43,7 +43,7 @@ mail = Mail(app)
 MODEL_PATH = 'emotion_cnn_model.h5'
 CASCADE_PATH = 'haarcascade_frontalface_default.xml'
 
-emotion_labels = ['Angry', 'Disgust', 'Fear', 'Happy', 'Neutral', 'Sad', 'Surprise']
+emotion_labels =['Angry', 'Disgust', 'Fear', 'Happy', 'Neutral', 'Sad', 'Surprise']
 last_predicted_mood = "None"
 
 # Jamendo API Client ID
@@ -246,6 +246,43 @@ def delete_song():
         return jsonify({"error": str(e)}), 500
     finally:
         db.close()
+
+# GET EMOTION ANALYTICS 
+@app.route("/admin/emotion-analytics", methods=["POST"])
+def get_admin_emotion_analytics():
+    data = request.json or {}
+    start_date = data.get("start_date")
+    end_date = data.get("end_date")
+
+    db = get_db_connection()
+    cursor = db.cursor(dictionary=True)
+    try:
+        query = "SELECT emotion as name, COUNT(*) as value FROM emotion_history"
+        conditions = []
+        params =[]
+
+        if start_date and start_date.strip() != "":
+            conditions.append("DATE(detected_at) >= %s")
+            params.append(start_date)
+
+        if end_date and end_date.strip() != "":
+            conditions.append("DATE(detected_at) <= %s")
+            params.append(end_date)
+
+        if conditions:
+            query += " WHERE " + " AND ".join(conditions)
+
+        # Group by emotion and sort
+        query += " GROUP BY emotion ORDER BY value DESC"
+        
+        cursor.execute(query, tuple(params))
+        data = cursor.fetchall()
+        return jsonify(data), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if db.is_connected():
+            db.close()
 
 # Combined Playlist 
 @app.post("/user/get-playlist")
