@@ -16,7 +16,7 @@ from flask_mail import Mail, Message
 app = Flask(__name__)
 CORS(app)
 
-# --- MAIL CONFIGURATION PART ---
+# MAIL CONFIGURATION PART 
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 465
 app.config['MAIL_USERNAME'] = 'tuladharunison@gmail.com'
