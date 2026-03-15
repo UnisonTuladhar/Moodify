@@ -2,43 +2,56 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { 
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+  BarChart, Bar, Cell
 } from 'recharts';
 import "../styles/Shared.css";
 import "../styles/Admin.css";
 import profileImg from "../images/profile.jpg"; 
 
+// Define colors specifically for the emotion bar chart
+const EMOTION_COLORS = {
+  "Happy": "#FFCC00",
+  "Sad": "#3498db",
+  "Angry": "#e74c3c",
+  "Neutral": "#95a5a6",
+  "Surprise": "#9b59b6",
+  "Fear": "#2c3e50",
+  "Disgust": "#2ecc71"
+};
+
 export default function AdminDashboard() {
   const navigate = useNavigate();
-  const [showDropdown, setShowDropdown] = useState(false);
+  const[showDropdown, setShowDropdown] = useState(false);
   const [activeTab, setActiveTab] = useState("users");
   
   // Data State
   const [users, setUsers] = useState([]);
   const [songs, setSongs] = useState([]); 
   const [filteredUsers, setFilteredUsers] = useState([]); 
-  const [loading, setLoading] = useState(true);
+  const [emotionAnalyticsData, setEmotionAnalyticsData] = useState([]); 
+  const[loading, setLoading] = useState(true);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState("");
   const [songSearchQuery, setSongSearchQuery] = useState(""); 
-  const [startDate, setStartDate] = useState("");
+  const[startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [chartData, setChartData] = useState([]);
+  const[chartData, setChartData] = useState([]);
 
   // Add User State
   const [showAddUser, setShowAddUser] = useState(false);
   const [newUser, setNewUser] = useState({ username: "", email: "", password: "", is_admin: "0" });
 
   // Add Song State
-  const [showAddSong, setShowAddSong] = useState(false);
+  const[showAddSong, setShowAddSong] = useState(false);
   const [newSong, setNewSong] = useState({ title: "", artist: "", mood: "Happy", language: "", file: null });
 
   // Edit State
   const [editUserId, setEditUserId] = useState(null);
   const [editFormData, setEditFormData] = useState({ username: "", email: "" });
 
-  const emotionOptions = ['Angry', 'Disgust', 'Fear', 'Happy', 'Neutral', 'Sad', 'Surprise'];
+  const emotionOptions =['Angry', 'Disgust', 'Fear', 'Happy', 'Neutral', 'Sad', 'Surprise'];
 
   const handleLogout = () => {
     localStorage.clear();
@@ -52,6 +65,12 @@ export default function AdminDashboard() {
       fetchSongs();
     }
   }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab === "emotions") {
+      fetchEmotionAnalytics(); 
+    }
+  }, [activeTab, startDate, endDate]);
 
   useEffect(() => {
     if(users.length > 0 && activeTab === "users") {
@@ -91,6 +110,23 @@ export default function AdminDashboard() {
       setSongs([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Fetch function for Emotion Analytics 
+  const fetchEmotionAnalytics = async () => {
+    setLoading(true);
+    try {
+        const res = await axios.post("http://127.0.0.1:5000/admin/emotion-analytics", {
+            start_date: startDate,
+            end_date: endDate
+        });
+        setEmotionAnalyticsData(res.data);
+    } catch (err) {
+        console.error("Error fetching emotion analytics", err);
+        setEmotionAnalyticsData([]);
+    } finally {
+        setLoading(false);
     }
   };
 
@@ -576,9 +612,58 @@ export default function AdminDashboard() {
             </div>
         )}
 
+        {/* EMOTION ANALYTICS TAB */}
         {activeTab === "emotions" && (
-            <div className="music-card full-width-card">
-                <h3>Emotion Management Dashboard</h3>
+            <div className="admin-dashboard-layout">
+                {/* Global Date Filter Section (Reused for Emotions) */}
+                <div className="music-card full-width-card filter-card-row">
+                    <span className="filter-label">📅 Filter Records by Date:</span>
+                    <div className="date-inputs-wrapper">
+                        <div className="input-wrap">
+                            <label>From:</label>
+                            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+                        </div>
+                        <div className="input-wrap">
+                            <label>To:</label>
+                            <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+                        </div>
+                        {(startDate || endDate) && (
+                            <button className="clear-date-btn" onClick={handleClearDates}>Clear Dates</button>
+                        )}
+                    </div>
+                </div>
+
+                <div className="music-card full-width-card" style={{ textAlign: "left", animation: "fadeIn 0.5s ease" }}>
+                    <h3 style={{ borderBottom: "2px solid #f0f0f0", paddingBottom: "15px" }}>Global Emotion Detection Analytics</h3>
+                    <p style={{color: '#666', marginBottom: '30px'}}>Aggregate frequency of all detected moods across the platform.</p>
+                    
+                    {loading ? (
+                        <div style={{textAlign: 'center', padding: '40px', color: '#666'}}>Loading analytics...</div>
+                    ) : emotionAnalyticsData.length === 0 ? (
+                        <div style={{ padding: "50px", textAlign: "center", color: "#888" }}>
+                            <p>No emotion data found in the system for this timeframe.</p>
+                        </div>
+                    ) : (
+                        <div style={{ width: '100%', height: 450 }}>
+                            <ResponsiveContainer>
+                                <BarChart data={emotionAnalyticsData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                    <XAxis dataKey="name" />
+                                    <YAxis allowDecimals={false} />
+                                    <Tooltip 
+                                        cursor={{fill: 'rgba(0,0,0,0.05)'}} 
+                                        contentStyle={{borderRadius: '10px', border: 'none', boxShadow: '0 5px 15px rgba(0,0,0,0.1)'}} 
+                                    />
+                                    <Bar dataKey="value" name="Total Detections" radius={[8, 8, 0, 0]} maxBarSize={60}>
+                                        {emotionAnalyticsData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={EMOTION_COLORS[entry.name] || '#8e44ad'} />
+                                        ))}
+                                    </Bar>
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    )}
+                </div>
             </div>
         )}
 

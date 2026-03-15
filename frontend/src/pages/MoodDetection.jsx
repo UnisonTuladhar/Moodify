@@ -43,12 +43,14 @@ export default function MoodDetection() {
       }
   };
 
-  // Fetch playlist based on mood
+  // Fetch playlist based on mood 
   const handleGetPlaylist = async () => {
       if(!confirmedMood) return;
       setPlaylistLoading(true);
       try {
+        console.log("Requesting tracks for mood:", confirmedMood);
         const res = await axios.post("http://127.0.0.1:5000/user/get-playlist", { mood: confirmedMood });
+        console.log("Data received from server:", res.data);
         setPlaylist(res.data);
       } catch (err) {
           console.error("Error fetching playlist", err);
@@ -132,7 +134,7 @@ export default function MoodDetection() {
       <div className="music-home-content detection-wrapper">
         <header className="music-welcome-header">
             <h1>Mood Detection</h1>
-            <p>Please hold still while we analyze your mood.</p>
+            <p>Please stay still while we analyze your mood.</p>
         </header>
 
         {/* Show Start Button if not detecting */}
@@ -191,11 +193,9 @@ export default function MoodDetection() {
                                 <p style={{fontSize: '1rem', color: '#666'}}>Detected Mood:</p>
                                 <h2 className="detected-mood-text">{confirmedMood}</h2>
                                 
-                                {playlist.length === 0 ? (
-                                    <button className="recommendation-btn" onClick={handleGetPlaylist}>
-                                        {playlistLoading ? "Loading..." : "🎵 Get Playlist"}
-                                    </button>
-                                ) : null}
+                                <button className="recommendation-btn" onClick={handleGetPlaylist} disabled={playlistLoading}>
+                                    {playlistLoading ? "Loading Tracks..." : "🎵 Get Playlist"}
+                                </button>
 
                                 <button 
                                     className="music-card-btn" 
@@ -214,20 +214,33 @@ export default function MoodDetection() {
             </div>
         )}
 
-        {/* PLAYLIST SECTION */}
+        {/* PLAYLIST SECTION - Shows Songs from API + Local */}
         {playlist.length > 0 && (
             <div className="music-card full-width-card" style={{marginTop: '40px', textAlign: 'left', animation: 'fadeIn 1s ease'}}>
                 <h3>Recommended {confirmedMood} Songs</h3>
-                <p style={{color: '#666', marginBottom: '20px'}}>Based on your detected emotion, here are some tracks you might like.</p>
+                <p style={{color: '#666', marginBottom: '20px'}}>Based on your detected emotion, here are some tracks to listen.</p>
                 
                 <div className="playlist-grid">
-                    {playlist.map((song) => (
-                        <div key={song.id} className="song-item" style={{display: 'flex', justifyContent:'space-between', alignItems: 'center', padding: '15px', borderBottom: '1px solid #eee'}}>
-                            <div>
-                                <h4 style={{margin: 0, color: '#333'}}>{song.title}</h4>
-                                <p style={{margin: 0, color: '#888', fontSize: '0.9rem'}}>{song.artist} • {song.language}</p>
+                    {playlist.map((song, index) => (
+                        <div key={index} className="song-item" style={{display: 'flex', justifyContent:'space-between', alignItems: 'center', padding: '15px', borderBottom: '1px solid #eee'}}>
+                            <div style={{display: 'flex', alignItems: 'center', gap: '15px'}}>
+                                {song.image ? (
+                                    <img src={song.image} alt="album" style={{width: '55px', height: '55px', borderRadius: '8px', objectFit: 'cover'}} />
+                                ) : (
+                                    <div style={{width: '55px', height: '55px', background: '#eee', borderRadius: '8px', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '1.5rem'}}>🎵</div>
+                                )}
+                                <div>
+                                    <h4 style={{margin: 0, color: '#333'}}>{song.title}</h4>
+                                    <p style={{margin: 0, color: '#888', fontSize: '0.85rem'}}>
+                                        {song.artist} • {song.is_api ? 'Free Jamendo Library' : 'Local Admin Song'}
+                                    </p>
+                                </div>
                             </div>
-                            <audio controls src={`http://127.0.0.1:5000/songs/${song.file_path}`} style={{height: '35px'}}></audio>
+                            <audio 
+                                controls 
+                                src={song.is_api ? song.file_path : `http://127.0.0.1:5000/songs/${song.file_path}`} 
+                                style={{height: '35px'}}
+                            ></audio>
                         </div>
                     ))}
                 </div>

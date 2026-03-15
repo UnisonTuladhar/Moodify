@@ -1,30 +1,31 @@
-from flask import Flask, request, jsonify, Response, send_from_directory 
+from flask import Flask, request, jsonify, Response, send_from_directory
 from flask_cors import CORS
 from config import get_db_connection
 from datetime import datetime
 import hashlib
 import random
-import cv2 
+import cv2
 import numpy as np
 import os
-from werkzeug.utils import secure_filename 
+import requests  # To call Jamendo API
+from werkzeug.utils import secure_filename
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing.image import img_to_array
-from flask_mail import Mail, Message 
+from flask_mail import Mail, Message
 
 app = Flask(__name__)
 CORS(app)
 
-#  MAIL CONFIGURATION PART
+# MAIL CONFIGURATION PART 
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 465
-app.config['MAIL_USERNAME'] = 'tuladharunison@gmail.com' 
-app.config['MAIL_PASSWORD'] = 'wxke isfd qwpb yevk'   
+app.config['MAIL_USERNAME'] = 'tuladharunison@gmail.com'
+app.config['MAIL_PASSWORD'] = 'wxke isfd qwpb yevk'
 app.config['MAIL_USE_TLS'] = False
 app.config['MAIL_USE_SSL'] = True
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024
 
-# FILE UPLOAD CONFIGURATION
+# FILE UPLOAD CONFIGURATION 
 UPLOAD_FOLDER = 'static/songs'
 ALLOWED_EXTENSIONS = {'mp3'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -41,8 +42,12 @@ mail = Mail(app)
 # Path for the trained model
 MODEL_PATH = 'emotion_cnn_model.h5'
 CASCADE_PATH = 'haarcascade_frontalface_default.xml'
-emotion_labels = ['Angry', 'Disgust', 'Fear', 'Happy', 'Neutral', 'Sad', 'Surprise']
+
+emotion_labels =['Angry', 'Disgust', 'Fear', 'Happy', 'Neutral', 'Sad', 'Surprise']
 last_predicted_mood = "None"
+
+# Jamendo API Client ID
+JAMENDO_CLIENT_ID = "78515f42"
 
 try:
     classifier = load_model(MODEL_PATH)
@@ -51,7 +56,7 @@ try:
 except Exception as e:
     print(f"Error loading AI components: {e}")
 
-# CAMERA Integration 
+# CAMERA Integration
 class VideoCamera:
     def __init__(self):
         self.video = cv2.VideoCapture(0)
@@ -132,14 +137,14 @@ def save_mood():
     finally:
         db.close()
 
-# GET MOOD HISTORY WITH FILTERS
+# GET MOOD HISTORY 
 @app.post("/user/emotion-history")
 def get_emotion_history():
     data = request.json
     email = data.get("email")
     mood_filter = data.get("mood_filter")
-    start_date = data.get("start_date")   
-    end_date = data.get("end_date")       
+    start_date = data.get("start_date")
+    end_date = data.get("end_date")
 
     query = "SELECT emotion, DATE_FORMAT(detected_at, '%Y-%m-%d %H:%i') as date FROM emotion_history WHERE email=%s"
     params = [email]
@@ -147,7 +152,7 @@ def get_emotion_history():
     if mood_filter and mood_filter != "All":
         query += " AND emotion = %s"
         params.append(mood_filter)
-    
+
     if start_date and start_date.strip() != "":
         query += " AND DATE(detected_at) >= %s"
         params.append(start_date)
@@ -175,7 +180,7 @@ def add_song():
     try:
         if 'file' not in request.files:
             return jsonify({"error": "No file part"}), 400
-        
+
         file = request.files['file']
         title = request.form.get('title')
         artist = request.form.get('artist')
@@ -204,7 +209,7 @@ def add_song():
         print(e)
         return jsonify({"error": str(e)}), 500
 
-# Get all songs (Admin)
+# Get all songs (Admin) 
 @app.get("/admin/songs")
 def get_all_songs():
     db = get_db_connection()
@@ -218,7 +223,7 @@ def get_all_songs():
     finally:
         db.close()
 
-# Delete songs (Admin)
+# Delete songs (Admin) 
 @app.post("/admin/delete-song")
 def delete_song():
     data = request.json
@@ -242,22 +247,112 @@ def delete_song():
     finally:
         db.close()
 
-# Display songs by mood detected (User)
+# GET EMOTION ANALYTICS 
+@app.route("/admin/emotion-analytics", methods=["POST"])
+def get_admin_emotion_analytics():
+    data = request.json or {}
+    start_date = data.get("start_date")
+    end_date = data.get("end_date")
+
+    db = get_db_connection()
+    cursor = db.cursor(dictionary=True)
+    try:
+        query = "SELECT emotion as name, COUNT(*) as value FROM emotion_history"
+        conditions = []
+        params =[]
+
+        if start_date and start_date.strip() != "":
+            conditions.append("DATE(detected_at) >= %s")
+            params.append(start_date)
+
+        if end_date and end_date.strip() != "":
+            conditions.append("DATE(detected_at) <= %s")
+            params.append(end_date)
+
+        if conditions:
+            query += " WHERE " + " AND ".join(conditions)
+
+        # Group by emotion and sort
+        query += " GROUP BY emotion ORDER BY value DESC"
+        
+        cursor.execute(query, tuple(params))
+        data = cursor.fetchall()
+        return jsonify(data), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if db.is_connected():
+            db.close()
+
+# Combined Playlist 
 @app.post("/user/get-playlist")
 def get_playlist_by_mood():
     data = request.json
     mood = data.get('mood')
+    
+    mood_tags = {
+        'Happy': 'dance',        # Upbeat / Dance / Pop
+        'Sad': 'upbeat',         # Energetic / Uplifting to cheer up
+        'Angry': 'chillout',     # Calm / Chillout to calm down
+        'Surprise': 'pop',       # Pop / Trending
+        'Neutral': 'acoustic',   # Chill / Acoustic / Ambient
+        'Fear': 'ambient',       # Relaxing / Ambient
+        'Disgust': 'happy'       # Positive / Light
+    }
+
+    tag = mood_tags.get(mood, 'pop')
+
+    url = f"https://api.jamendo.com/v3.0/tracks/?client_id={JAMENDO_CLIENT_ID}&format=json&limit=20&tags={tag}&audioformat=mp32"
+
+    api_songs =[]
+    try:
+        print(f"DEBUG: Calling Jamendo API for mood: {mood} with tag: {tag}...")
+        response = requests.get(url, timeout=10)
+        if response.status_code == 200:
+            results = response.json().get("results",[])
+            for track in results:
+                api_songs.append({
+                    "id": f"api_{track['id']}",
+                    "title": track["name"],
+                    "artist": track["artist_name"],
+                    "mood": mood,
+                    "language": "Online Library",
+                    "file_path": track["audio"], 
+                    "image": track["album_image"],
+                    "is_api": True
+                })
+        else:
+            print(f"Jamendo API returned status: {response.status_code}")
+    except Exception as e:
+        print(f"Jamendo API failed: {e}")
+
+    # Fetching local songs from DB
     db = get_db_connection()
     cursor = db.cursor(dictionary=True)
+    local_songs =[]
     try:
-        query = "SELECT * FROM songs WHERE mood=%s ORDER BY RAND() LIMIT 10"
+        query = "SELECT * FROM songs WHERE mood=%s ORDER BY RAND() LIMIT 5"
         cursor.execute(query, (mood,))
-        songs = cursor.fetchall()
-        return jsonify(songs), 200
+        db_results = cursor.fetchall()
+        for s in db_results:
+            local_songs.append({
+                "id": s["id"],
+                "title": s["title"],
+                "artist": s["artist"],
+                "mood": s["mood"],
+                "language": s["language"],
+                "file_path": s["file_path"],
+                "image": None,
+                "is_api": False
+            })
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        print(f"Local DB fetch failed: {e}")
     finally:
-        db.close()
+        if db.is_connected():
+            db.close()
+
+    # Returning combined list
+    return jsonify(local_songs + api_songs), 200
 
 @app.route('/songs/<path:filename>')
 def serve_songs(filename):
@@ -269,7 +364,7 @@ def hash_password(password):
 def generate_otp():
     return str(random.randint(100000, 999999))
 
-# Registration Logic
+# Registration Logic 
 @app.post("/register-step1")
 def register_step1():
     data = request.json
@@ -305,7 +400,7 @@ def register_step1():
     finally:
         db.close()
 
-# OTP Verification Logic
+# OTP Verification Logic 
 @app.post("/verify-registration")
 def verify_registration():
     data = request.json
@@ -340,7 +435,7 @@ def login():
             "message": "Login successful!",
             "username": user["username"],
             "email": user["email"],
-            "is_admin": user["is_admin"] 
+            "is_admin": user["is_admin"]
         }), 200
     else:
         return jsonify({"error": "Invalid email or password!"}), 401
@@ -352,7 +447,7 @@ def admin_add_user():
     username = data["username"]
     email = data["email"].lower().strip()
     password = hash_password(data["password"])
-    is_admin = int(data["is_admin"]) 
+    is_admin = int(data["is_admin"])
 
     db = get_db_connection()
     cursor = db.cursor()
@@ -387,13 +482,13 @@ def get_all_users():
             cursor.execute("SELECT id, username, email, is_admin FROM users")
             users = cursor.fetchall()
             for user in users:
-                user['registered_date'] = '2024-01-01' 
+                user['registered_date'] = '2024-01-01'
             return jsonify(users), 200
         except Exception as e2:
             return jsonify({"error": str(e2)}), 500
-    finally:
-        if db.is_connected():
-            db.close()
+        finally:
+            if db.is_connected():
+                db.close()
 
 # Delete user (Admin)
 @app.post("/admin/delete-user")
@@ -418,7 +513,7 @@ def admin_edit_user():
     user_id = data.get("id")
     username = data.get("username")
     email = data.get("email").lower().strip()
-    
+
     db = get_db_connection()
     cursor = db.cursor()
     try:
@@ -430,7 +525,7 @@ def admin_edit_user():
     finally:
         db.close()
 
-# Profile View 
+# Profile View
 @app.route("/user/profile", methods=["GET"])
 def get_profile():
     email = request.args.get('email').lower().strip()
@@ -443,7 +538,7 @@ def get_profile():
         return jsonify(user), 200
     return jsonify({"error": "User not found"}), 404
 
-# Update Profile 
+# Update Profile
 @app.post("/user/update-profile")
 def update_profile():
     data = request.json
@@ -453,7 +548,7 @@ def update_profile():
     db = get_db_connection()
     cursor = db.cursor()
     try:
-        cursor.execute("UPDATE users SET username=%s, email=%s WHERE email=%s", 
+        cursor.execute("UPDATE users SET username=%s, email=%s WHERE email=%s",
                        (new_username, new_email, old_email))
         db.commit()
         return jsonify({"message": "Profile updated successfully!"}), 200
@@ -462,7 +557,7 @@ def update_profile():
     finally:
         db.close()
 
-# Change Password 
+# Change Password
 @app.post("/user/change-password")
 def change_password():
     data = request.json
@@ -484,7 +579,7 @@ def change_password():
         db.close()
         return jsonify({"error": "Current password is incorrect!"}), 400
 
-# Forgot Password 
+# Forgot Password
 @app.post("/forgot-password")
 def forgot_password():
     data = request.json
@@ -492,7 +587,7 @@ def forgot_password():
 
     db = get_db_connection()
     cursor = db.cursor(dictionary=True)
-    
+
     try:
         cursor.execute("SELECT * FROM users WHERE email=%s", (email,))
         user = cursor.fetchone()
@@ -522,12 +617,12 @@ def verify_forgot_otp():
     data = request.json
     email = data.get("email", "").strip().lower()
     otp = data.get("otp", "").strip()
-    
+
     print(f"Verifying OTP for {email}. Input OTP: {otp}") 
 
     db = get_db_connection()
     cursor = db.cursor(dictionary=True)
-    
+
     try:
         cursor.execute("SELECT * FROM users WHERE email=%s AND otp=%s", (email, otp))
         user = cursor.fetchone()
@@ -575,7 +670,7 @@ def reset_password():
     finally:
         db.close()
 
-# Delete Account 
+# Delete Account
 @app.post("/user/delete-account")
 def delete_account():
     data = request.json
@@ -584,7 +679,7 @@ def delete_account():
 
     db = get_db_connection()
     cursor = db.cursor(dictionary=True)
-    
+
     try:
         cursor.execute("SELECT is_admin FROM users WHERE email=%s AND password=%s", (email, password))
         user = cursor.fetchone()
