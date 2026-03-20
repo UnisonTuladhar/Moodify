@@ -188,7 +188,6 @@ export default function AdminHome() {
                     <div className="music-card" style={{padding: '30px', textAlign: 'center', background: '#fcfcfc', border: '1px dashed #ddd'}}>
                         <div style={{fontSize: '3rem', marginBottom: '10px', opacity: 0.5}}>🎵</div>
                         <h4 style={{color: '#888', margin: '0 0 10px 0', fontSize: '1rem', fontWeight: '600'}}>Most Listened Music Today</h4>
-                        <p style={{color: '#aaa', fontStyle: 'italic', margin: 0, fontSize: '1.1rem'}}>Feature coming soon...</p>
                     </div>
                 </div>
 

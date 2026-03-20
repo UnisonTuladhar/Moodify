@@ -9,7 +9,6 @@ import Footer from "./Footer";
 export default function MoodDetection() {
   const navigate = useNavigate();
   const [showDropdown, setShowDropdown] = useState(false);
-  
   const [isDetecting, setIsDetecting] = useState(false);
   const [liveMood, setLiveMood] = useState("Detecting...");
   const [confirmedMood, setConfirmedMood] = useState(null);
@@ -21,9 +20,11 @@ export default function MoodDetection() {
   const [playlist, setPlaylist] = useState([]);
   const [playlistLoading, setPlaylistLoading] = useState(false);
 
+  // Tab filter state: "all" | "ai" | "admin"
+  const [activeTab, setActiveTab] = useState("all");
+
   // Get user email for saving history
   const userEmail = localStorage.getItem("email");
-
   const handleLogout = () => {
     localStorage.clear();
     navigate("/login");
@@ -52,6 +53,9 @@ export default function MoodDetection() {
         const res = await axios.post("http://127.0.0.1:5000/user/get-playlist", { mood: confirmedMood });
         console.log("Data received from server:", res.data);
         setPlaylist(res.data);
+
+        // Reset tab to "all" whenever a new playlist is loaded
+        setActiveTab("all");
       } catch (err) {
           console.error("Error fetching playlist", err);
           alert("Failed to fetch songs.");
@@ -69,7 +73,6 @@ export default function MoodDetection() {
           const res = await axios.get("http://127.0.0.1:5000/get_mood");
           const mood = res.data.mood;
           setLiveMood(mood);
-
           // Mood check for 3 seconds
           if (mood !== "None" && mood !== "No Face Found" && mood === lastMoodRef.current) {
             stabilityCountRef.current += 1;
@@ -77,9 +80,7 @@ export default function MoodDetection() {
             stabilityCountRef.current = 0;
             lastMoodRef.current = mood;
           }
-
           setStabilityScore(stabilityCountRef.current);
-
           if (stabilityCountRef.current >= 3) {
             setConfirmedMood(mood);
             saveMoodToDB(mood); 
@@ -89,7 +90,6 @@ export default function MoodDetection() {
         }
       }, 1000);
     }
-
     return () => clearInterval(interval);
   }, [isDetecting, confirmedMood]); 
 
@@ -101,7 +101,16 @@ export default function MoodDetection() {
       setLiveMood("Detecting...");
       stabilityCountRef.current = 0;
       lastMoodRef.current = "";
+      setActiveTab("all");
   };
+
+  // Filter playlist based on active tab
+  const filteredPlaylist = playlist.filter((song) => {
+    if (activeTab === "all") return true;
+    if (activeTab === "ai") return song.is_api === true;
+    if (activeTab === "admin") return song.is_api === false;
+    return true;
+  });
 
   return (
     <div className="music-home-container">
@@ -124,32 +133,26 @@ export default function MoodDetection() {
           )}
         </div>
       </nav>
-
       <div className="back-button-container">
-         <button className="back-link-btn" onClick={() => navigate("/home")}>
-            ← Back to Home
-         </button>
+         <button className="back-link-btn" onClick={() => navigate("/home")}>Back to Home</button>
       </div>
-
       <div className="music-home-content detection-wrapper">
         <header className="music-welcome-header">
             <h1>Mood Detection</h1>
             <p>Please stay still while we analyze your mood.</p>
         </header>
-
         {/* Show Start Button if not detecting */}
         {!isDetecting ? (
             <div style={{ textAlign: "center", padding: "40px" }}>
                 <div className="music-card" style={{ maxWidth: "500px", margin: "0 auto", padding: "60px 40px" }}>
-                    <div style={{ fontSize: "5rem", marginBottom: "20px" }}>📷</div>
+                    <div style={{ fontSize: "5rem", marginBottom: "20px" }}>
+</div>
                     <h3>Start Facial Analysis</h3>
                     <p style={{marginBottom: "30px", color: "#666"}}>Click the button below to open your camera and start the detection process.</p>
                     <button 
                         className="music-main-btn large-btn" 
                         onClick={() => setIsDetecting(true)}
-                        style={{background: 'linear-gradient(90deg, #ff4e00, #ec008c)'}}
-                    >
-                        ✨ Start Detection
+                        style={{background: 'linear-gradient(90deg, #ff4e00, #ec008c)'}}>Start Detection
                     </button>
                 </div>
             </div>
@@ -178,13 +181,12 @@ export default function MoodDetection() {
                         </div>
                     </div>
                 </div>
-
                 {/* RIGHT SIDE: RESULTS */}
                 <div className="results-side">
                     <div className="mood-result-card">
                         <h3>Analysis Results</h3>
                         <p className="live-indicator">
-                            {confirmedMood ? "● Detection Paused" : `● Live: ${liveMood}`}
+                            {confirmedMood ? "Detection Paused" : `Live: ${liveMood}`}
                         </p>
                         
                         <div className="final-mood-box">
@@ -194,15 +196,10 @@ export default function MoodDetection() {
                                 <h2 className="detected-mood-text">{confirmedMood}</h2>
                                 
                                 <button className="recommendation-btn" onClick={handleGetPlaylist} disabled={playlistLoading}>
-                                    {playlistLoading ? "Loading Tracks..." : "🎵 Get Playlist"}
+                                    {playlistLoading ? "Loading Tracks..." : "Get Playlist"}
                                 </button>
-
-                                <button 
-                                    className="music-card-btn" 
-                                    style={{marginTop: '15px', width: '100%', border: '1px solid #ddd'}} 
-                                    onClick={handleDetectAgain}
-                                >
-                                    🔄 Detect Mood Again
+                                <button className="music-card-btn" style={{marginTop: '15px', width: '100%', border: '1px solid #ddd'}} onClick={handleDetectAgain}
+                                > Detect Mood Again
                                 </button>
                             </>
                         ) : (
@@ -213,36 +210,68 @@ export default function MoodDetection() {
                 </div>
             </div>
         )}
-
         {/* PLAYLIST SECTION - Shows Songs from API + Local */}
         {playlist.length > 0 && (
             <div className="music-card full-width-card" style={{marginTop: '40px', textAlign: 'left', animation: 'fadeIn 1s ease'}}>
                 <h3>Recommended {confirmedMood} Songs</h3>
                 <p style={{color: '#666', marginBottom: '20px'}}>Based on your detected emotion, here are some tracks to listen.</p>
                 
+                {/* PLAYLIST TAB FILTER */}
+                <div className="playlist-tabs">
+                    <button
+                        className={`playlist-tab-btn ${activeTab === "all" ? "active" : ""}`}
+                        onClick={() => setActiveTab("all")}
+                    >
+                        🎵 All Tracks
+                    </button>
+                    <button
+                        className={`playlist-tab-btn ${activeTab === "ai" ? "active" : ""}`}
+                        onClick={() => setActiveTab("ai")}
+                    >
+                        ✨ Smart Picks
+                    </button>
+                    <button
+                        className={`playlist-tab-btn ${activeTab === "admin" ? "active" : ""}`}
+                        onClick={() => setActiveTab("admin")}
+                    >
+                        🎧 Admin's Choice
+                    </button>
+                </div>
+
+                {/* FILTERED SONG LIST */}
                 <div className="playlist-grid">
-                    {playlist.map((song, index) => (
-                        <div key={index} className="song-item" style={{display: 'flex', justifyContent:'space-between', alignItems: 'center', padding: '15px', borderBottom: '1px solid #eee'}}>
-                            <div style={{display: 'flex', alignItems: 'center', gap: '15px'}}>
-                                {song.image ? (
-                                    <img src={song.image} alt="album" style={{width: '55px', height: '55px', borderRadius: '8px', objectFit: 'cover'}} />
-                                ) : (
-                                    <div style={{width: '55px', height: '55px', background: '#eee', borderRadius: '8px', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '1.5rem'}}>🎵</div>
-                                )}
-                                <div>
-                                    <h4 style={{margin: 0, color: '#333'}}>{song.title}</h4>
-                                    <p style={{margin: 0, color: '#888', fontSize: '0.85rem'}}>
-                                        {song.artist} • {song.is_api ? 'Free Jamendo Library' : 'Local Admin Song'}
-                                    </p>
+                    {filteredPlaylist.length > 0 ? (
+                        filteredPlaylist.map((song, index) => (
+                            <div key={index} className="song-item" style={{display: 'flex', justifyContent:'space-between', alignItems: 'center', padding: '15px', borderBottom: '1px solid #eee'}}>
+                                <div style={{display: 'flex', alignItems: 'center', gap: '15px'}}>
+                                    {song.image ? (
+                                        <img src={song.image} alt="album" style={{width: '55px', height: '55px', borderRadius: '8px', objectFit: 'cover'}} />
+                                    ) : (
+                                        <div style={{width: '55px', height: '55px', background: '#eee', borderRadius: '8px', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '1.5rem'}}> 🎵
+                                        </div>
+                                    )}
+                                    <div>
+                                        <h4 style={{margin: 0, color: '#333'}}>{song.title}</h4>
+                                        <p style={{margin: 0, color: '#888', fontSize: '0.85rem'}}>
+                                            {song.artist} • {song.is_api ? 'Free Jamendo Library' : 'Local Admin Song'}
+                                        </p>
+                                    </div>
                                 </div>
+                                <audio 
+                                    controls 
+                                    src={song.is_api ? song.file_path : `http://127.0.0.1:5000/songs/${song.file_path}`} 
+                                    style={{height: '35px'}}
+                                ></audio>
                             </div>
-                            <audio 
-                                controls 
-                                src={song.is_api ? song.file_path : `http://127.0.0.1:5000/songs/${song.file_path}`} 
-                                style={{height: '35px'}}
-                            ></audio>
+                        ))
+                    ) : (
+                        /* Empty state when a tab has no songs */
+                        <div style={{textAlign: 'center', padding: '40px', color: '#aaa'}}>
+                            <div style={{fontSize: '2.5rem', marginBottom: '10px'}}>🎶</div>
+                            <p style={{fontWeight: '600', color: '#888'}}>No tracks in this category yet.</p>
+                            <p style={{fontSize: '0.85rem'}}>Try switching to another tab or refresh the playlist.</p>
                         </div>
-                    ))}
+                    )}
                 </div>
             </div>
         )}
