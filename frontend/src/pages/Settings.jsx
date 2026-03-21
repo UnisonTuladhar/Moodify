@@ -9,25 +9,17 @@ export default function Settings() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("profile");
   const [showDropdown, setShowDropdown] = useState(false);
-  
   const [user, setUser] = useState({ username: "", email: "" });
-  const [passwords, setPasswords] = useState({ current: "", new: "" });
-  
-  // Delete Account 
+  const [passwords, setPasswords] = useState({ current: "", new: "" }); 
   const [deleteStep, setDeleteStep] = useState(1);
   const [delPassword, setDelPassword] = useState("");
-
   const userEmail = localStorage.getItem("email");
   const isAdmin = localStorage.getItem("is_admin") === "1";
-
-  // Navigation Logic
   const homeLink = isAdmin ? "/admin-home" : "/home";
   const dashboardLink = isAdmin ? "/admin-dashboard" : "/dashboard";
-
   useEffect(() => {
     if (userEmail) fetchProfile();
   }, [userEmail]);
-
   const fetchProfile = async () => {
     try {
       const res = await axios.get(`http://127.0.0.1:5000/user/profile?email=${userEmail}`);
@@ -36,7 +28,6 @@ export default function Settings() {
       console.error("Profile fetch error"); 
     }
   };
-
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
     try {
@@ -49,7 +40,6 @@ export default function Settings() {
       alert("Profile Updated Successfully!");
     } catch (err) { alert("Update failed"); }
   };
-
   const handleChangePassword = async (e) => {
     e.preventDefault();
     try {
@@ -64,7 +54,6 @@ export default function Settings() {
       alert(err.response?.data?.error || "Failed to update password"); 
     }
   };
-
   const handleDeleteAccount = async (e) => {
     e.preventDefault();
     try {
@@ -79,14 +68,16 @@ export default function Settings() {
       alert(err.response?.data?.error || "Incorrect Password");
     }
   };
-
   const handleLogout = () => {
     localStorage.clear();
     navigate("/login");
   };
 
+  // Get initials for avatar
+  const getInitials = (name) => name ? name.charAt(0).toUpperCase() : "U";
+
   return (
-    <div className="music-home-container">
+    <div className="music-home-container settings-page-bg">
       <nav className="music-nav">
         <div className="music-logo" onClick={() => navigate(homeLink)} style={{cursor:'pointer'}}>Moodify</div>
         
@@ -108,41 +99,84 @@ export default function Settings() {
       </nav>
 
       <div className="settings-back-container">
-         <button className="back-link-btn" onClick={() => navigate(homeLink)}>
-           ← Back to Home
-         </button>
+        <button className="back-link-btn" onClick={() => navigate(homeLink)}>
+          ← Back to Home
+        </button>
       </div>
 
       <div className="settings-page-wrapper">
         
         {/* SIDEBAR */}
         <div className="settings-sidebar">
-          <button className={`sidebar-btn ${activeTab === 'profile' ? 'active' : ''}`} onClick={() => setActiveTab("profile")}>Profile</button>
-          <button className={`sidebar-btn ${activeTab === 'password' ? 'active' : ''}`} onClick={() => setActiveTab("password")}>Security</button>
-          <button className={`sidebar-btn ${activeTab === 'delete' ? 'active' : ''}`} style={{color: 'red'}} onClick={() => {setActiveTab("delete"); setDeleteStep(1)}}>Delete Account</button>
+          {/* User avatar card */}
+          <div className="settings-user-card">
+            <div className="settings-avatar">
+              {getInitials(user.username)}
+            </div>
+            <div className="settings-user-info">
+              <p className="settings-user-name">{user.username || "User"}</p>
+              <p className="settings-user-email">{user.email || ""}</p>
+            </div>
+          </div>
+
+          {/* Nav items */}
+          <nav className="settings-nav-list">
+            <button
+              className={`sidebar-btn ${activeTab === 'profile' ? 'active' : ''}`}
+              onClick={() => setActiveTab("profile")}
+            >
+              <span className="sidebar-icon">👤</span> Profile
+            </button>
+            <button
+              className={`sidebar-btn ${activeTab === 'password' ? 'active' : ''}`}
+              onClick={() => setActiveTab("password")}
+            >
+              <span className="sidebar-icon">🔒</span> Security
+            </button>
+            <button
+              className={`sidebar-btn sidebar-btn-danger ${activeTab === 'delete' ? 'active-danger' : ''}`}
+              onClick={() => { setActiveTab("delete"); setDeleteStep(1); }}
+            >
+              <span className="sidebar-icon">🗑️</span> Delete Account
+            </button>
+          </nav>
         </div>
 
         {/* CONTENT CARD */}
-        <div className="music-card settings-content-card">
+        <div className="settings-content-card">
           
           {activeTab === "profile" && (
-             <form onSubmit={handleUpdateProfile} className="settings-form">
-               <h2 style={{marginBottom: '30px', color: '#333'}}>Edit Profile</h2>
-               <div className="music-input-group">
-                 <label>Username</label>
-                 <input value={user.username} onChange={e => setUser({...user, username: e.target.value})} />
-               </div>
-               <div className="music-input-group">
-                 <label>Email</label>
-                 <input value={user.email} onChange={e => setUser({...user, email: e.target.value})} />
-               </div>
-               <button className="music-main-btn" type="submit" style={{marginTop: '20px'}}>Save Changes</button>
-             </form>
+            <form onSubmit={handleUpdateProfile} className="settings-form">
+              <div className="settings-form-header">
+                <div className="settings-form-icon">👤</div>
+                <div>
+                  <h2>Edit Profile</h2>
+                  <p>Update your display name and email address</p>
+                </div>
+              </div>
+              <div className="settings-divider"></div>
+              <div className="music-input-group">
+                <label>Username</label>
+                <input value={user.username} onChange={e => setUser({...user, username: e.target.value})} />
+              </div>
+              <div className="music-input-group">
+                <label>Email</label>
+                <input value={user.email} onChange={e => setUser({...user, email: e.target.value})} />
+              </div>
+              <button className="settings-save-btn" type="submit">Save Changes</button>
+            </form>
           )}
 
           {activeTab === "password" && (
             <form onSubmit={handleChangePassword} className="settings-form">
-              <h2 style={{marginBottom: '30px', color: '#333'}}>Change Password</h2>
+              <div className="settings-form-header">
+                <div className="settings-form-icon">🔒</div>
+                <div>
+                  <h2>Change Password</h2>
+                  <p>Keep your account secure with a strong password</p>
+                </div>
+              </div>
+              <div className="settings-divider"></div>
               <div className="music-input-group">
                 <label>Current Password</label>
                 <input type="password" required placeholder="Enter current password" value={passwords.current} onChange={e => setPasswords({...passwords, current: e.target.value})} />
@@ -151,7 +185,7 @@ export default function Settings() {
                 <label>New Password</label>
                 <input type="password" required placeholder="Enter new password" value={passwords.new} onChange={e => setPasswords({...passwords, new: e.target.value})} />
               </div>
-              <button className="music-main-btn" type="submit" style={{marginTop: '20px'}}>Update Password</button>
+              <button className="settings-save-btn" type="submit">Update Password</button>
             </form>
           )}
 
@@ -159,23 +193,26 @@ export default function Settings() {
             <div className="delete-section">
               {deleteStep === 1 ? (
                 <>
-                  <h2 style={{color: '#e74c3c'}}>Delete Account</h2>
-                  <p style={{lineHeight: '1.6', color: '#666', marginTop: '10px'}}>Are you sure you want to delete your account? This action cannot be undone and you will lose all your emotion history.</p>
-                  <div style={{display: 'flex', gap: '15px', marginTop: '30px', justifyContent: 'center'}}>
-                    <button className="music-logout-btn" style={{background: '#e74c3c', padding: '12px 30px'}} onClick={() => setDeleteStep(2)}>Yes, Delete</button>
-                    <button className="music-card-btn" style={{margin: 0, padding: '12px 30px'}} onClick={() => setActiveTab("profile")}>No, Keep Account</button>
+                  <div className="delete-warning-icon">⚠️</div>
+                  <h2>Delete Account</h2>
+                  <p>Are you sure you want to delete your account? This action cannot be undone and you will lose all your emotion history.</p>
+                  <div className="delete-actions">
+                    <button className="delete-confirm-btn" onClick={() => setDeleteStep(2)}>Yes, Delete My Account</button>
+                    <button className="delete-cancel-btn" onClick={() => setActiveTab("profile")}>No, Keep Account</button>
                   </div>
                 </>
               ) : (
-                <form onSubmit={handleDeleteAccount} className="settings-form">
-                  <h2 style={{color: '#e74c3c'}}>Verify Identity</h2>
-                  <p style={{marginBottom: '20px', color: '#666'}}>Please enter your account password to confirm deletion.</p>
+                <form onSubmit={handleDeleteAccount} className="settings-form" style={{maxWidth:'100%'}}>
+                  <div className="delete-warning-icon">🔐</div>
+                  <h2>Verify Identity</h2>
+                  <p style={{marginBottom: '25px', color: '#666'}}>Please enter your password to confirm permanent deletion.</p>
                   <div className="music-input-group">
-                    <input type="password" placeholder="Enter Password" required value={delPassword} onChange={e => setDelPassword(e.target.value)} />
+                    <label>Password</label>
+                    <input type="password" placeholder="Enter your password" required value={delPassword} onChange={e => setDelPassword(e.target.value)} />
                   </div>
-                  <div style={{display: 'flex', gap: '15px', marginTop: '20px', justifyContent: 'center'}}>
-                    <button className="music-main-btn" type="submit" style={{background: '#e74c3c', width: 'auto', padding: '12px 30px'}}>Confirm Deletion</button>
-                    <p className="music-back-link" style={{margin: 'auto 0', cursor: 'pointer', color: '#666'}} onClick={() => setDeleteStep(1)}>Cancel</p>
+                  <div className="delete-actions">
+                    <button className="delete-confirm-btn" type="submit">Confirm Deletion</button>
+                    <button className="delete-cancel-btn" type="button" onClick={() => setDeleteStep(1)}>Cancel</button>
                   </div>
                 </form>
               )}
