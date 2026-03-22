@@ -1,0 +1,211 @@
+/* Heart like button on each song row */
+.like-btn {
+    background: none;
+    border: 1.5px solid #e0e0e0;
+    cursor: pointer;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+    flex-shrink: 0;
+    padding: 0;
+}
+
+.like-btn:hover {
+    transform: scale(1.15);
+    background: rgba(231, 76, 60, 0.08);
+    border-color: #e74c3c;
+}
+
+.like-btn.liked {
+    border-color: #e74c3c;
+    background: rgba(231, 76, 60, 0.06);
+    animation: heartPop 0.3s ease;
+}
+
+@keyframes heartPop {
+    0%   { transform: scale(1); }
+    50%  { transform: scale(1.35); }
+    100% { transform: scale(1); }
+}
+
+.detect-hero-nav .profile-container {
+    position: relative !important;
+}
+.detect-hero-nav .profile-dropdown {
+    right: 0 !important;
+    left: auto !important;
+}
+
+.liked-songs-container {
+    padding: 4px 0 20px 0;
+}
+
+.liked-songs-list {
+    background: #fff;
+    border-radius: 18px;
+    border: 1px solid #f0f0f0;
+    overflow: hidden;
+}
+
+.liked-songs-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px 14px 24px;
+    border-bottom: 1px solid #f5f5f5;
+}
+
+.liked-songs-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #222;
+}
+
+.liked-songs-count {
+    font-size: 0.82rem;
+    color: #aaa;
+    font-weight: 500;
+    background: #f5f5f5;
+    padding: 3px 12px;
+    border-radius: 20px;
+}
+
+/* Column label row */
+.liked-songs-cols {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 24px;
+    background: #fafafa;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #bbb;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+}
+
+/* Individual song row */
+.liked-song-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 24px;
+    border-bottom: 1px solid #f9f9f9;
+    transition: background 0.15s ease;
+}
+
+.liked-song-row:last-child {
+    border-bottom: none;
+}
+
+.liked-song-row:hover {
+    background: #fdfcff;
+}
+
+/* Album art thumbnail */
+.liked-song-thumb {
+    flex: 0 0 44px;
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    object-fit: cover;
+}
+
+/* Placeholder when no album art */
+.liked-song-thumb-placeholder {
+    background: #f0f0f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    border-radius: 8px;
+}
+
+/* Text info block */
+.liked-song-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.liked-song-name {
+    margin: 0 0 2px 0;
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: #222;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.liked-song-artist {
+    margin: 0 0 2px 0;
+    font-size: 0.8rem;
+    color: #888;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.liked-song-date {
+    margin: 0;
+    font-size: 0.72rem;
+    color: #ccc;
+}
+
+/* Mood pill badge */
+.liked-mood-pill {
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+/* Unlike button */
+.unlike-btn {
+    background: none;
+    border: 1.5px solid #fcc;
+    cursor: pointer;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease, background 0.2s ease;
+    flex-shrink: 0;
+    padding: 0;
+}
+
+.unlike-btn:hover {
+    transform: scale(1.15);
+    background: rgba(231, 76, 60, 0.08);
+    border-color: #e74c3c;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .liked-songs-cols {
+        display: none;
+    }
+    .liked-song-row {
+        flex-wrap: wrap;
+        padding: 14px 16px;
+        gap: 10px;
+    }
+    .liked-song-row > div[style*="220px"],
+    .liked-song-row > div[style*="120px"],
+    .liked-song-row > div[style*="50px"] {
+        flex: 1 1 auto !important;
+        justify-content: flex-start !important;
+    }
+    .liked-song-row audio {
+        width: 100% !important;
+    }
+}

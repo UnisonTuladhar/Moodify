@@ -2,9 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { 
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-  BarChart, Bar, Cell
-} from 'recharts';
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, Cell} from 'recharts';
 import "../styles/Shared.css";
 import "../styles/Admin.css";
 import profileImg from "../images/profile.jpg"; 
@@ -25,18 +23,12 @@ export default function AdminHome() {
   const navigate = useNavigate();
   const[showDropdown, setShowDropdown] = useState(false);
   const adminName = localStorage.getItem("username") || "Admin";
-
-  // States for Analytics
   const [loading, setLoading] = useState(true);
   const[userChartData, setUserChartData] = useState([]);
   const [emotionData, setEmotionData] = useState([]);
   const[recentUsers, setRecentUsers] = useState([]);
-  
-  // States for Today's Summaries
   const[totalMoodsToday, setTotalMoodsToday] = useState(0);
   const[mostDetectedMoodToday, setMostDetectedMoodToday] = useState("None");
-
-  // To get today's date in YYYY-MM-DD format
   const getTodayString = () => {
     const today = new Date();
     const year = today.getFullYear();
@@ -44,7 +36,6 @@ export default function AdminHome() {
     const day = String(today.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
   };
-
   useEffect(() => {
     const fetchDashboardData = async () => {
       setLoading(true);
@@ -70,18 +61,15 @@ export default function AdminHome() {
           return new Date(a.date) - new Date(b.date);
         });
         setUserChartData(graphData);
-
         // Process Today's Registered Users (10 max)
         const todaysUsers = allUsers
             .filter(u => u.registered_date === todayStr)
-            .sort((a, b) => b.id - a.id) // Sort by newest
+            .sort((a, b) => b.id - a.id)
             .slice(0, 10);
         setRecentUsers(todaysUsers);
-
         // Fetch All-time Emotions for Bar Chart
         const allTimeEmotionsRes = await axios.post("http://127.0.0.1:5000/admin/emotion-analytics", {});
         setEmotionData(Array.isArray(allTimeEmotionsRes.data) ? allTimeEmotionsRes.data :[]);
-
         // Fetch Today's Emotions for Summary Cards
         const todayEmotionsRes = await axios.post("http://127.0.0.1:5000/admin/emotion-analytics", {
             start_date: todayStr,
@@ -92,7 +80,6 @@ export default function AdminHome() {
         let totalToday = 0;
         let maxMood = "None";
         let maxCount = 0;
-
         tEmotions.forEach(e => {
             totalToday += e.value;
             if (e.value > maxCount) {
@@ -100,193 +87,238 @@ export default function AdminHome() {
                 maxMood = e.name;
             }
         });
-
         setTotalMoodsToday(totalToday);
         setMostDetectedMoodToday(maxMood);
-
       } catch (err) {
         console.error("Error fetching admin home data:", err);
       } finally {
         setLoading(false);
       }
     };
-
     fetchDashboardData();
   },[]);
-
   const handleLogout = () => {
     localStorage.clear();
     navigate("/login");
   };
-
   return (
-    <div className="music-home-container" style={{background: "#f0f2f5"}}>
-      {/* Admin Navbar */}
-      <nav className="music-nav" style={{borderTop: "5px solid #8e44ad"}}>
-        <div className="music-logo" onClick={() => navigate("/admin-home")} style={{cursor:'pointer'}}>
-          Moodify 
-        </div>
-        
-        <div className="profile-container">
-          <img 
-            src={profileImg} 
-            alt="profile" 
-            className="profile-icon-img"
-            onClick={() => setShowDropdown(!showDropdown)}
-          />
-          {showDropdown && (
-            <div className="profile-dropdown">
-              <p onClick={() => navigate("/admin-dashboard")}>Dashboard</p>
-              <p onClick={() => navigate("/admin-settings")}>Settings</p>
-              <p onClick={handleLogout} className="dropdown-logout">Logout</p>
-            </div>
-          )}
-        </div>
-      </nav>
+    <div className="music-home-container admin-home-bg">
 
-      {/* Admin Home Content */}
-      <div className="music-home-content" style={{maxWidth: "1400px", margin: "0 auto", padding: "40px 20px"}}>
-        <div className="admin-status-label">ADMIN PANEL</div>
-        
-        <header className="music-welcome-header" style={{marginBottom: "30px"}}>
-          <h1>Welcome Back, <span className="highlight-text">{adminName}</span></h1>
-          <p className="hero-subtitle">
-            Here's a quick overview of what's happening on Moodify today.
+      <div className="admin-hero-panel">
+        <nav className="music-nav admin-hero-nav">
+          <div className="music-logo admin-hero-logo" onClick={() => navigate("/admin-home")} style={{cursor:'pointer'}}>
+            Moodify
+          </div>
+          <div className="profile-container">
+            <img 
+              src={profileImg} 
+              alt="profile" 
+              className="profile-icon-img admin-hero-profile"
+              onClick={() => setShowDropdown(!showDropdown)}
+            />
+            {showDropdown && (
+              <div className="profile-dropdown">
+                <p onClick={() => navigate("/admin-dashboard")}>Dashboard</p>
+                <p onClick={() => navigate("/admin-settings")}>Settings</p>
+                <p onClick={handleLogout} className="dropdown-logout">Logout</p>
+              </div>
+            )}
+          </div>
+        </nav>
+
+        <div className="admin-diagonal-overlay"></div>
+
+        {/* Scan corner brackets */}
+        <div className="hero-scan-lines">
+          <div className="scan-corner scan-tl"></div>
+          <div className="scan-corner scan-tr"></div>
+          <div className="scan-corner scan-bl"></div>
+          <div className="scan-corner scan-br"></div>
+        </div>
+
+        <div className="admin-hero-content">
+          <div className="admin-hero-badge">Admin Panel</div>
+          <h1 className="admin-hero-title">
+            Welcome Back, <span className="highlight-text">{adminName}</span>!
+          </h1>
+          <p className="admin-hero-subtitle">
+            Here's a quick overview of what's happening on Moodify today. 
+            Monitor users, emotions, and platform activity in real time.
           </p>
-        </header>
+          <div style={{ marginTop: "38px", display: "flex", gap: "14px", flexWrap: "wrap" }}>
+            <button 
+              className="admin-hero-btn primary"
+              onClick={() => navigate("/admin-dashboard")}
+            >
+              📊 View Analytics
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ── ANALYTICS CONTENT ── */}
+      <div className="admin-home-content">
 
         {loading ? (
-            <div style={{textAlign: "center", padding: "50px", fontSize: "1.2rem", color: "#888"}}>
-                Loading Dashboard Analytics...
-            </div>
+          <div className="admin-loading">
+            <div className="admin-loading-spinner"></div>
+            <p>Loading Dashboard Analytics...</p>
+          </div>
         ) : (
-            <>
-                {/* SUMMARY CARDS */}
-                <div style={{
-                    display: 'grid', 
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', 
-                    gap: '20px', 
-                    marginBottom: '30px'
-                }}>
-                    {/* Total Moods Today */}
-                    <div className="music-card" style={{padding: '30px', textAlign: 'center'}}>
-                        <div style={{fontSize: '3rem', marginBottom: '10px'}}>📊</div>
-                        <h4 style={{color: '#888', margin: '0 0 10px 0', fontSize: '1rem', fontWeight: '600'}}>Total Moods Detected Today</h4>
-                        <h2 style={{color: '#1a1614', margin: 0, fontSize: '2.5rem'}}>{totalMoodsToday}</h2>
-                    </div>
-
-                    {/* Most Detected Mood Today */}
-                    <div className="music-card" style={{padding: '30px', textAlign: 'center'}}>
-                        <div style={{fontSize: '3rem', marginBottom: '10px'}}>🎭</div>
-                        <h4 style={{color: '#888', margin: '0 0 10px 0', fontSize: '1rem', fontWeight: '600'}}>Most Detected Mood Today</h4>
-                        <h2 style={{color: EMOTION_COLORS[mostDetectedMoodToday] || '#8e44ad', margin: 0, fontSize: '2.5rem'}}>
-                            {mostDetectedMoodToday}
-                        </h2>
-                    </div>
-
-                    {/* Most Listened Music (Placeholder) */}
-                    <div className="music-card" style={{padding: '30px', textAlign: 'center', background: '#fcfcfc', border: '1px dashed #ddd'}}>
-                        <div style={{fontSize: '3rem', marginBottom: '10px', opacity: 0.5}}>🎵</div>
-                        <h4 style={{color: '#888', margin: '0 0 10px 0', fontSize: '1rem', fontWeight: '600'}}>Most Listened Music Today</h4>
-                        <p style={{color: '#aaa', fontStyle: 'italic', margin: 0, fontSize: '1.1rem'}}>Feature coming soon...</p>
-                    </div>
+          <>
+            {/* SUMMARY STAT CARDS */}
+            <div className="admin-stats-grid">
+              {/* Total Moods Today */}
+              <div className="admin-stat-card">
+                <div className="admin-stat-icon mood-icon">📊</div>
+                <div className="admin-stat-info">
+                  <p className="admin-stat-label">Total Moods Today</p>
+                  <h2 className="admin-stat-value">{totalMoodsToday}</h2>
                 </div>
+                <div className="admin-stat-accent accent-orange"></div>
+              </div>
 
-                {/* CHARTS SECTION (Middle Row) */}
-                <div style={{
-                    display: 'grid', 
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(500px, 1fr))', 
-                    gap: '30px', 
-                    marginBottom: '30px'
-                }}>
-                    {/* Line Chart: Registration */}
-                    <div className="music-card full-width-card" style={{ padding: '25px', textAlign: 'left' }}>
-                        <h3 style={{marginBottom: "20px", color: "#333"}}>User Registration Trends</h3>
-                        <div style={{width: '100%', height: 300}}>
-                            <ResponsiveContainer>
-                            <LineChart data={userChartData}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                <XAxis dataKey="date" />
-                                <YAxis allowDecimals={false} />
-                                <Tooltip contentStyle={{borderRadius: '10px', border: 'none', boxShadow: '0 5px 15px rgba(0,0,0,0.1)'}} />
-                                <Legend />
-                                <Line type="monotone" dataKey="Registrations" stroke="#8e44ad" strokeWidth={3} dot={{r: 5}} activeDot={{r: 8}} />
-                            </LineChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </div>
-
-                    {/* Bar Chart: All-Time Emotions */}
-                    <div className="music-card full-width-card" style={{ padding: '25px', textAlign: 'left' }}>
-                        <h3 style={{marginBottom: "20px", color: "#333"}}>Global Emotion Analytics (All Time)</h3>
-                        <div style={{width: '100%', height: 300}}>
-                            <ResponsiveContainer>
-                                <BarChart data={emotionData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                    <XAxis dataKey="name" />
-                                    <YAxis allowDecimals={false} />
-                                    <Tooltip 
-                                        cursor={{fill: 'rgba(0,0,0,0.05)'}} 
-                                        contentStyle={{borderRadius: '10px', border: 'none', boxShadow: '0 5px 15px rgba(0,0,0,0.1)'}} 
-                                    />
-                                    <Bar dataKey="value" name="Total Detections" radius={[6, 6, 0, 0]} maxBarSize={50}>
-                                        {emotionData.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={EMOTION_COLORS[entry.name] || '#8e44ad'} />
-                                        ))}
-                                    </Bar>
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </div>
+              {/* Most Detected Mood */}
+              <div className="admin-stat-card">
+                <div className="admin-stat-icon emotion-icon">🎭</div>
+                <div className="admin-stat-info">
+                  <p className="admin-stat-label">Top Mood Today</p>
+                  <h2 className="admin-stat-value" style={{color: EMOTION_COLORS[mostDetectedMoodToday] || '#8e44ad'}}>
+                    {mostDetectedMoodToday}
+                  </h2>
                 </div>
+                <div className="admin-stat-accent accent-purple"></div>
+              </div>
 
-                {/* TODAY'S REGISTRATIONS TABLE (Bottom Row) */}
-                <div className="music-card full-width-card" style={{ textAlign: "left", cursor: "default", overflowX: "auto" }}>
-                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: "2px solid #f0f0f0", paddingBottom: "15px"}}>
-                        <h3 style={{ margin: 0 }}>Today's Registered Users</h3>
-                        <button 
-                            className="music-card-btn" 
-                            style={{margin: 0, padding: '8px 15px', fontSize: '0.85rem'}}
-                            onClick={() => navigate("/admin-dashboard")}
-                        >
-                            View All Users →
-                        </button>
-                    </div>
-
-                    {recentUsers.length === 0 ? (
-                        <div style={{ padding: "40px", textAlign: "center", color: "#888" }}>
-                            <p style={{fontSize: '1.1rem', margin: 0}}>No users have registered today.</p>
-                        </div>
-                    ) : (
-                        <table style={{ width: "100%", marginTop: "10px", borderCollapse: "collapse" }}>
-                            <thead>
-                                <tr style={{ textAlign: "left", color: "#8e44ad", fontSize: '0.95rem' }}>
-                                    <th style={{ padding: "15px", borderBottom: "2px solid #eee" }}>S.N.</th>
-                                    <th style={{ padding: "15px", borderBottom: "2px solid #eee" }}>Username</th>
-                                    <th style={{ padding: "15px", borderBottom: "2px solid #eee" }}>Email Address</th>
-                                    <th style={{ padding: "15px", borderBottom: "2px solid #eee" }}>Role</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {recentUsers.map((user, index) => (
-                                <tr key={user.id} className="table-row">
-                                    <td style={{ padding: "15px" }}>{index + 1}</td>
-                                    <td style={{ padding: "15px", fontWeight: "600" }}>{user.username}</td>
-                                    <td style={{ padding: "15px", color: "#555" }}>{user.email}</td>
-                                    <td style={{ padding: "15px" }}>
-                                        <span className={user.is_admin === 1 ? "role-badge admin" : "role-badge user"}>
-                                            {user.is_admin === 1 ? "Admin" : "User"}
-                                        </span>
-                                    </td>
-                                </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    )}
+              {/* Today's Registrations */}
+              <div className="admin-stat-card">
+                <div className="admin-stat-icon users-icon">👤</div>
+                <div className="admin-stat-info">
+                  <p className="admin-stat-label">New Users Today</p>
+                  <h2 className="admin-stat-value">{recentUsers.length}</h2>
                 </div>
-            </>
+                <div className="admin-stat-accent accent-green"></div>
+              </div>
+
+              {/* Quick Actions Card */}
+              <div className="admin-stat-card admin-quick-actions">
+                <div className="admin-stat-icon">⚡</div>
+                <div className="admin-stat-info">
+                  <p className="admin-stat-label">Quick Actions</p>
+                  <div style={{display:'flex', gap:'8px', marginTop:'8px', flexWrap:'wrap'}}>
+                    <button className="admin-quick-btn" onClick={() => navigate("/admin-dashboard")}>Dashboard</button>
+                    <button className="admin-quick-btn" onClick={() => navigate("/admin-settings")}>Settings</button>
+                  </div>
+                </div>
+                <div className="admin-stat-accent accent-blue"></div>
+              </div>
+            </div>
+
+            {/* CHARTS ROW */}
+            <div className="admin-charts-grid">
+              {/* Line Chart: Registration Trends */}
+              <div className="admin-chart-card">
+                <div className="admin-chart-header">
+                  <h3>User Registration Trends</h3>
+                  <span className="admin-chart-tag">All Time</span>
+                </div>
+                <div style={{width: '100%', height: 300}}>
+                  <ResponsiveContainer>
+                    <LineChart data={userChartData}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                      <XAxis dataKey="date" tick={{fontSize: 11, fill: '#aaa'}} />
+                      <YAxis allowDecimals={false} tick={{fontSize: 11, fill: '#aaa'}} />
+                      <Tooltip contentStyle={{borderRadius: '10px', border: 'none', boxShadow: '0 5px 20px rgba(0,0,0,0.1)'}} />
+                      <Legend />
+                      <Line type="monotone" dataKey="Registrations" stroke="url(#lineGrad)" strokeWidth={3} dot={{r: 5, fill: '#ff4e00'}} activeDot={{r: 8}} />
+                      <defs>
+                        <linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0">
+                          <stop offset="0%" stopColor="#ff4e00" />
+                          <stop offset="100%" stopColor="#ec008c" />
+                        </linearGradient>
+                      </defs>
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* Bar Chart: All-Time Emotions */}
+              <div className="admin-chart-card">
+                <div className="admin-chart-header">
+                  <h3>Global Emotion Analytics</h3>
+                  <span className="admin-chart-tag">All Time</span>
+                </div>
+                <div style={{width: '100%', height: 300}}>
+                  <ResponsiveContainer>
+                    <BarChart data={emotionData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                      <XAxis dataKey="name" tick={{fontSize: 11, fill: '#aaa'}} />
+                      <YAxis allowDecimals={false} tick={{fontSize: 11, fill: '#aaa'}} />
+                      <Tooltip cursor={{fill: 'rgba(0,0,0,0.03)'}} contentStyle={{borderRadius: '10px', border: 'none', boxShadow: '0 5px 20px rgba(0,0,0,0.1)'}} />
+                      <Bar dataKey="value" name="Total Detections" radius={[8, 8, 0, 0]} maxBarSize={55}>
+                        {emotionData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={EMOTION_COLORS[entry.name] || '#8e44ad'} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+
+            {/* TODAY'S REGISTRATIONS TABLE */}
+            <div className="admin-table-card">
+              <div className="admin-table-header">
+                <div>
+                  <h3>Today's Registered Users</h3>
+                  <p>Users who joined Moodify today</p>
+                </div>
+                <button 
+                  className="admin-view-all-btn"
+                  onClick={() => navigate("/admin-dashboard")}
+                >
+                  View All Users →
+                </button>
+              </div>
+
+              {recentUsers.length === 0 ? (
+                <div className="admin-empty-state">
+                  <div style={{fontSize: '2.5rem', marginBottom: '10px'}}>👤</div>
+                  <p>No users have registered today.</p>
+                </div>
+              ) : (
+                <div style={{overflowX: 'auto'}}>
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>S.N.</th>
+                        <th>Username</th>
+                        <th>Email Address</th>
+                        <th>Role</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {recentUsers.map((user, index) => (
+                        <tr key={user.id} className="table-row">
+                          <td>{index + 1}</td>
+                          <td style={{fontWeight: "600"}}>{user.username}</td>
+                          <td style={{color: "#777"}}>{user.email}</td>
+                          <td>
+                            <span className={user.is_admin === 1 ? "role-badge admin" : "role-badge user"}>
+                              {user.is_admin === 1 ? "Admin" : "User"}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </>
         )}
       </div>
+
       <Footer />
     </div>
   );
