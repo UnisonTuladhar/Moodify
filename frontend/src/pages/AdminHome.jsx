@@ -152,12 +152,6 @@ export default function AdminHome() {
             >
               📊 View Analytics
             </button>
-            <button 
-              className="admin-hero-btn secondary"
-              onClick={() => navigate("/admin-dashboard")}
-            >
-              👥 Manage Users
-            </button>
           </div>
         </div>
       </div>
