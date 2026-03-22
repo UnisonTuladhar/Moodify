@@ -351,7 +351,6 @@ def get_playlist_by_mood():
         if db.is_connected():
             db.close()
 
-    # Returning combined list
     return jsonify(local_songs + api_songs), 200
 
 @app.route('/songs/<path:filename>')
@@ -696,6 +695,104 @@ def delete_account():
         cursor.execute("DELETE FROM users WHERE email=%s", (email,))
         db.commit()
         return jsonify({"message": "Account deleted successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        db.close()
+
+# Like or Unlike a song (toggle)
+@app.post("/user/like-song")
+def like_song():
+    data = request.json
+    email = data.get("email")
+    song_id = data.get("song_id")         
+    song_title = data.get("song_title")
+    song_artist = data.get("song_artist")
+    song_mood = data.get("song_mood")
+    song_image = data.get("song_image")    
+    song_source = data.get("song_source")  
+    file_path = data.get("file_path")      
+
+    if not email or not song_id:
+        return jsonify({"error": "Missing required fields"}), 400
+
+    db = get_db_connection()
+    cursor = db.cursor(dictionary=True)
+    try:
+        cursor.execute(
+            "SELECT id FROM liked_songs WHERE email=%s AND song_id=%s",
+            (email, str(song_id))
+        )
+        existing = cursor.fetchone()
+
+        if existing:
+            cursor.execute(
+                "DELETE FROM liked_songs WHERE email=%s AND song_id=%s",
+                (email, str(song_id))
+            )
+            db.commit()
+            return jsonify({"message": "Song unliked", "liked": False}), 200
+        else:
+            cursor.execute(
+                """INSERT INTO liked_songs
+                   (email, song_id, song_title, song_artist, song_mood, song_image, song_source, file_path)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""",
+                (email, str(song_id), song_title, song_artist, song_mood, song_image, song_source, file_path)
+            )
+            db.commit()
+            return jsonify({"message": "Song liked", "liked": True}), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        db.close()
+
+# Get all liked songs for a user
+@app.post("/user/liked-songs")
+def get_liked_songs():
+    data = request.json
+    email = data.get("email")
+
+    if not email:
+        return jsonify({"error": "Email is required"}), 400
+
+    db = get_db_connection()
+    cursor = db.cursor(dictionary=True)
+    try:
+        cursor.execute(
+            """SELECT song_id, song_title, song_artist, song_mood,
+                      song_image, song_source, file_path,
+                      DATE_FORMAT(liked_at, '%Y-%m-%d %H:%i') as liked_at
+               FROM liked_songs
+               WHERE email=%s
+               ORDER BY liked_at DESC""",
+            (email,)
+        )
+        songs = cursor.fetchall()
+        return jsonify(songs), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        db.close()
+
+# Get liked song IDs only 
+@app.post("/user/liked-song-ids")
+def get_liked_song_ids():
+    data = request.json
+    email = data.get("email")
+
+    if not email:
+        return jsonify({"error": "Email is required"}), 400
+
+    db = get_db_connection()
+    cursor = db.cursor(dictionary=True)
+    try:
+        cursor.execute(
+            "SELECT song_id FROM liked_songs WHERE email=%s",
+            (email,)
+        )
+        rows = cursor.fetchall()
+        ids = [row["song_id"] for row in rows]
+        return jsonify(ids), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     finally:
