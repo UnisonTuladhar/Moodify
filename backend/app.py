@@ -43,8 +43,12 @@ mail = Mail(app)
 MODEL_PATH = 'emotion_cnn_model.h5'
 CASCADE_PATH = 'haarcascade_frontalface_default.xml'
 
-emotion_labels =['Angry', 'Disgust', 'Fear', 'Happy', 'Neutral', 'Sad', 'Surprise']
+emotion_labels = ['Angry', 'Happy', 'Neutral', 'Sad', 'Surprise']
 last_predicted_mood = "None"
+
+# Flag to control whether emotion detection is actively running to stop the camera 
+detection_active = False
+camera_instance = None
 
 # Jamendo API Client ID
 JAMENDO_CLIENT_ID = "78515f42"
@@ -56,65 +60,90 @@ try:
 except Exception as e:
     print(f"Error loading AI components: {e}")
 
-# CAMERA Integration
-class VideoCamera:
-    def __init__(self):
-        self.video = cv2.VideoCapture(0)
+def get_camera():
+    """Open the camera if not already open. Returns the singleton VideoCapture instance."""
+    global camera_instance
+    if camera_instance is None or not camera_instance.isOpened():
+        camera_instance = cv2.VideoCapture(0)
+        print("Camera opened.")
+    return camera_instance
 
-    def __del__(self):
-        self.video.release()
+def release_camera():
+    """Explicitly release the camera hardware so the camera light turns off immediately."""
+    global camera_instance
+    if camera_instance is not None and camera_instance.isOpened():
+        camera_instance.release()
+        print("Camera released — light should be off.")
+    camera_instance = None
 
-    def get_frame(self):
-        global last_predicted_mood
-        success, frame = self.video.read()
-        if not success:
-            return None
-        
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        faces = face_classifier.detectMultiScale(gray, 1.3, 5)
+def get_frame_from_camera():
+    """Capture one frame, run face detection and emotion prediction, return JPEG bytes."""
+    global last_predicted_mood
+    cam = get_camera()
+    success, frame = cam.read()
+    if not success:
+        return None
 
-        if len(faces) == 0:
-            last_predicted_mood = "None"
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    faces = face_classifier.detectMultiScale(gray, 1.3, 5)
 
-        for (x, y, w, h) in faces:
-            cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 255), 2)
-            roi_gray = gray[y:y+h, x:x+w]
-            roi_gray = cv2.resize(roi_gray, (48, 48), interpolation=cv2.INTER_AREA)
+    if len(faces) == 0:
+        last_predicted_mood = "None"
 
-            if np.sum([roi_gray]) != 0:
-                roi = roi_gray.astype('float') / 255.0
-                roi = img_to_array(roi)
-                roi = np.expand_dims(roi, axis=0)
+    for (x, y, w, h) in faces:
+        cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 255), 2)
+        roi_gray = gray[y:y+h, x:x+w]
+        roi_gray = cv2.resize(roi_gray, (48, 48), interpolation=cv2.INTER_AREA)
 
-                prediction = classifier.predict(roi)[0]
-                label = emotion_labels[prediction.argmax()]
-                last_predicted_mood = label
-                
-                label_position = (x, y-10)
-                cv2.putText(frame, f"Mood: {label}", label_position, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-            else:
-                cv2.putText(frame, 'No Face Found', (20, 60), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+        if np.sum([roi_gray]) != 0:
+            roi = roi_gray.astype('float') / 255.0
+            roi = img_to_array(roi)
+            roi = np.expand_dims(roi, axis=0)
 
-        ret, jpeg = cv2.imencode('.jpg', frame)
-        return jpeg.tobytes()
+            prediction = classifier.predict(roi)[0]
+            label = emotion_labels[prediction.argmax()]
+            last_predicted_mood = label
 
-def gen(camera):
-    while True:
-        frame = camera.get_frame()
-        if frame is not None:
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
+            label_position = (x, y-10)
+            cv2.putText(frame, f"Mood: {label}", label_position, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
         else:
-            break
+            cv2.putText(frame, 'No Face Found', (20, 60), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
 
-@app.route('/video_feed')
-def video_feed():
-    return Response(gen(VideoCamera()), mimetype='multipart/x-mixed-replace; boundary=frame')
+    ret, jpeg = cv2.imencode('.jpg', frame)
+    return jpeg.tobytes()
+
+
+@app.route('/get_frame')
+def get_frame():
+    if not detection_active:
+        return Response(status=204)
+    frame = get_frame_from_camera()
+    if frame is None:
+        return Response(status=204)
+    return Response(frame, mimetype='image/jpeg')
 
 @app.route('/get_mood', methods=['GET'])
 def get_mood():
     global last_predicted_mood
     return jsonify({"mood": last_predicted_mood}), 200
+
+# Sets the ddetection to true to open the camera and start the detection 
+@app.route('/start_detection', methods=['POST'])
+def start_detection():
+    global detection_active, last_predicted_mood
+    detection_active = True
+    last_predicted_mood = "None"  
+    get_camera()  
+    print("Detection started.")
+    return jsonify({"message": "Detection started"}), 200
+
+@app.route('/stop_detection', methods=['POST'])
+def stop_detection():
+    global detection_active
+    detection_active = False
+    release_camera()  
+    print("Detection stopped and camera released.")
+    return jsonify({"message": "Detection stopped"}), 200
 
 # SAVE MOOD TO HISTORY 
 @app.post("/save-mood")
@@ -296,8 +325,6 @@ def get_playlist_by_mood():
         'Angry': 'chillout',     # Calm / Chillout to calm down
         'Surprise': 'pop',       # Pop / Trending
         'Neutral': 'acoustic',   # Chill / Acoustic / Ambient
-        'Fear': 'ambient',       # Relaxing / Ambient
-        'Disgust': 'happy'       # Positive / Light
     }
 
     tag = mood_tags.get(mood, 'pop')
@@ -458,36 +485,25 @@ def admin_add_user():
         cursor.execute("INSERT INTO users (username, email, password, is_admin, is_verified) VALUES (%s, %s, %s, %s, 1)",
                        (username, email, password, is_admin))
         db.commit()
-        return jsonify({"message": "User created successfully!"}), 201
+        return jsonify({"message": "User added successfully!"}), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     finally:
         db.close()
 
-# View Users (Admin)
-@app.route("/admin/users", methods=["GET"])
+# Get all users (Admin)
+@app.get("/admin/users")
 def get_all_users():
     db = get_db_connection()
     cursor = db.cursor(dictionary=True)
     try:
-        query = "SELECT id, username, email, is_admin, DATE_FORMAT(created_at, '%Y-%m-%d') as registered_date FROM users"
-        cursor.execute(query)
+        cursor.execute("SELECT id, username, email, is_admin, is_verified FROM users ORDER BY id DESC")
         users = cursor.fetchall()
         return jsonify(users), 200
     except Exception as e:
-        try:
-            cursor.close()
-            cursor = db.cursor(dictionary=True)
-            cursor.execute("SELECT id, username, email, is_admin FROM users")
-            users = cursor.fetchall()
-            for user in users:
-                user['registered_date'] = '2024-01-01'
-            return jsonify(users), 200
-        except Exception as e2:
-            return jsonify({"error": str(e2)}), 500
-        finally:
-            if db.is_connected():
-                db.close()
+        return jsonify({"error": str(e)}), 500
+    finally:
+        db.close()
 
 # Delete user (Admin)
 @app.post("/admin/delete-user")
@@ -505,50 +521,40 @@ def admin_delete_user():
     finally:
         db.close()
 
-# Edit user (Admin)
-@app.post("/admin/edit-user")
-def admin_edit_user():
-    data = request.json
-    user_id = data.get("id")
-    username = data.get("username")
-    email = data.get("email").lower().strip()
-
+# Get User Profile
+@app.get("/user/profile")
+def get_profile():
+    email = request.args.get("email", "").lower().strip()
     db = get_db_connection()
-    cursor = db.cursor()
+    cursor = db.cursor(dictionary=True)
     try:
-        cursor.execute("UPDATE users SET username=%s, email=%s WHERE id=%s", (username, email, user_id))
-        db.commit()
-        return jsonify({"message": "User updated successfully"}), 200
+        cursor.execute("SELECT username, email, address, gender FROM users WHERE email=%s", (email,))
+        user = cursor.fetchone()
+        if user:
+            return jsonify(user), 200
+        else:
+            return jsonify({"error": "User not found"}), 404
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     finally:
         db.close()
 
-# Profile View
-@app.route("/user/profile", methods=["GET"])
-def get_profile():
-    email = request.args.get('email').lower().strip()
-    db = get_db_connection()
-    cursor = db.cursor(dictionary=True)
-    cursor.execute("SELECT username, email FROM users WHERE email=%s", (email,))
-    user = cursor.fetchone()
-    db.close()
-    if user:
-        return jsonify(user), 200
-    return jsonify({"error": "User not found"}), 404
-
 # Update Profile
 @app.post("/user/update-profile")
 def update_profile():
     data = request.json
-    old_email = data["old_email"].lower().strip()
-    new_username = data["username"]
-    new_email = data["email"].lower().strip()
+    email = data.get("email", "").lower().strip()
+    new_username = data.get("username", "").strip()
+    address = data.get("address", "").strip()
+    gender = data.get("gender", "").strip()
+
     db = get_db_connection()
     cursor = db.cursor()
     try:
-        cursor.execute("UPDATE users SET username=%s, email=%s WHERE email=%s",
-                       (new_username, new_email, old_email))
+        cursor.execute(
+            "UPDATE users SET username=%s, address=%s, gender=%s WHERE email=%s",
+            (new_username, address, gender, email)
+        )
         db.commit()
         return jsonify({"message": "Profile updated successfully!"}), 200
     except Exception as e:
@@ -560,9 +566,9 @@ def update_profile():
 @app.post("/user/change-password")
 def change_password():
     data = request.json
-    email = data["email"].lower().strip()
-    current_password = hash_password(data["current_password"])
-    new_password = hash_password(data["new_password"])
+    email = data.get("email", "").lower().strip()
+    current_password = hash_password(data.get("current_password", ""))
+    new_password = hash_password(data.get("new_password", ""))
 
     db = get_db_connection()
     cursor = db.cursor(dictionary=True)
