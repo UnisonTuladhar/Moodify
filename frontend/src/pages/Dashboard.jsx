@@ -15,8 +15,6 @@ const COLORS = {
   "Angry": "#e74c3c",
   "Neutral": "#95a5a6",
   "Surprise": "#9b59b6",
-  "Fear": "#2c3e50",
-  "Disgust": "#2ecc71"
 };
 
 // SVG Play icon

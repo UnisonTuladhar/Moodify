@@ -16,8 +16,6 @@ const EMOTION_COLORS = {
   "Angry": "#e74c3c",
   "Neutral": "#95a5a6",
   "Surprise": "#9b59b6",
-  "Fear": "#2c3e50",
-  "Disgust": "#2ecc71"
 };
 
 export default function AdminDashboard() {
@@ -51,7 +49,7 @@ export default function AdminDashboard() {
   const [editUserId, setEditUserId] = useState(null);
   const [editFormData, setEditFormData] = useState({ username: "", email: "" });
 
-  const emotionOptions =['Angry', 'Disgust', 'Fear', 'Happy', 'Neutral', 'Sad', 'Surprise'];
+  const emotionOptions = ['Angry', 'Happy', 'Neutral', 'Sad', 'Surprise'];
 
   const handleLogout = () => {
     localStorage.clear();

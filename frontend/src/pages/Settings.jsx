@@ -9,37 +9,47 @@ export default function Settings() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("profile");
   const [showDropdown, setShowDropdown] = useState(false);
-  const [user, setUser] = useState({ username: "", email: "" });
-  const [passwords, setPasswords] = useState({ current: "", new: "" }); 
+  const [user, setUser] = useState({ username: "", email: "", address: "", gender: "" });
+  const [passwords, setPasswords] = useState({ current: "", new: "" });
   const [deleteStep, setDeleteStep] = useState(1);
   const [delPassword, setDelPassword] = useState("");
   const userEmail = localStorage.getItem("email");
   const isAdmin = localStorage.getItem("is_admin") === "1";
   const homeLink = isAdmin ? "/admin-home" : "/home";
   const dashboardLink = isAdmin ? "/admin-dashboard" : "/dashboard";
+
   useEffect(() => {
     if (userEmail) fetchProfile();
   }, [userEmail]);
+
   const fetchProfile = async () => {
     try {
       const res = await axios.get(`http://127.0.0.1:5000/user/profile?email=${userEmail}`);
-      setUser(res.data);
-    } catch (err) { 
-      console.error("Profile fetch error"); 
+      setUser({
+        username: res.data.username || "",
+        email: res.data.email || "",
+        address: res.data.address || "",
+        gender: res.data.gender || ""
+      });
+    } catch (err) {
+      console.error("Profile fetch error");
     }
   };
+
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
     try {
       await axios.post("http://127.0.0.1:5000/user/update-profile", {
-        old_email: userEmail,
-        username: user.username, email: user.email
+        email: userEmail,
+        username: user.username,
+        address: user.address,
+        gender: user.gender
       });
-      localStorage.setItem("email", user.email);
       localStorage.setItem("username", user.username);
       alert("Profile Updated Successfully!");
     } catch (err) { alert("Update failed"); }
   };
+
   const handleChangePassword = async (e) => {
     e.preventDefault();
     try {
@@ -50,10 +60,11 @@ export default function Settings() {
       });
       alert("Password Updated Successfully!");
       setPasswords({ current: "", new: "" });
-    } catch (err) { 
-      alert(err.response?.data?.error || "Failed to update password"); 
+    } catch (err) {
+      alert(err.response?.data?.error || "Failed to update password");
     }
   };
+
   const handleDeleteAccount = async (e) => {
     e.preventDefault();
     try {
@@ -68,6 +79,7 @@ export default function Settings() {
       alert(err.response?.data?.error || "Incorrect Password");
     }
   };
+
   const handleLogout = () => {
     localStorage.clear();
     navigate("/login");
@@ -80,11 +92,10 @@ export default function Settings() {
     <div className="music-home-container settings-page-bg">
       <nav className="music-nav">
         <div className="music-logo" onClick={() => navigate(homeLink)} style={{cursor:'pointer'}}>Moodify</div>
-        
         <div className="profile-container">
-          <img 
-            src={profileImg} 
-            alt="profile" 
+          <img
+            src={profileImg}
+            alt="profile"
             className="profile-icon-img"
             onClick={() => setShowDropdown(!showDropdown)}
           />
@@ -105,7 +116,7 @@ export default function Settings() {
       </div>
 
       <div className="settings-page-wrapper">
-        
+
         {/* SIDEBAR */}
         <div className="settings-sidebar">
           {/* User avatar card */}
@@ -118,50 +129,71 @@ export default function Settings() {
               <p className="settings-user-email">{user.email || ""}</p>
             </div>
           </div>
-
           {/* Nav items */}
           <nav className="settings-nav-list">
             <button
               className={`sidebar-btn ${activeTab === 'profile' ? 'active' : ''}`}
               onClick={() => setActiveTab("profile")}
             >
-              <span className="sidebar-icon">👤</span> Profile
+              <span className="sidebar-icon"></span> Profile
             </button>
             <button
               className={`sidebar-btn ${activeTab === 'password' ? 'active' : ''}`}
               onClick={() => setActiveTab("password")}
             >
-              <span className="sidebar-icon">🔒</span> Security
+              <span className="sidebar-icon"></span> Security
             </button>
             <button
               className={`sidebar-btn sidebar-btn-danger ${activeTab === 'delete' ? 'active-danger' : ''}`}
               onClick={() => { setActiveTab("delete"); setDeleteStep(1); }}
             >
-              <span className="sidebar-icon">🗑️</span> Delete Account
+              <span className="sidebar-icon"></span> Delete Account
             </button>
           </nav>
         </div>
 
         {/* CONTENT CARD */}
         <div className="settings-content-card">
-          
+
           {activeTab === "profile" && (
             <form onSubmit={handleUpdateProfile} className="settings-form">
               <div className="settings-form-header">
-                <div className="settings-form-icon">👤</div>
+                <div className="settings-form-icon"></div>
                 <div>
                   <h2>Edit Profile</h2>
-                  <p>Update your display name and email address</p>
+                  <p>Update your display name and personal details</p>
                 </div>
               </div>
               <div className="settings-divider"></div>
               <div className="music-input-group">
                 <label>Username</label>
-                <input value={user.username} onChange={e => setUser({...user, username: e.target.value})} />
+                <input
+                  required
+                  value={user.username}
+                  onChange={e => setUser({...user, username: e.target.value})}
+                  placeholder="Enter your username"
+                />
               </div>
               <div className="music-input-group">
-                <label>Email</label>
-                <input value={user.email} onChange={e => setUser({...user, email: e.target.value})} />
+                <label>Address <span style={{color:'#aaa', fontWeight:'400'}}>(optional)</span></label>
+                <input
+                  value={user.address}
+                  onChange={e => setUser({...user, address: e.target.value})}
+                  placeholder="Enter your address"
+                />
+              </div>
+              <div className="music-input-group">
+                <label>Gender <span style={{color:'#aaa', fontWeight:'400'}}>(optional)</span></label>
+                <select
+                  value={user.gender}
+                  onChange={e => setUser({...user, gender: e.target.value})}
+                  style={{width:'100%', padding:'14px 18px', borderRadius:'30px', border:'1px solid #ddd', outline:'none', background:'#fff', fontSize:'0.95rem', color: user.gender ? '#333' : '#aaa'}}
+                >
+                  <option value="">Select gender</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Prefer not to say">Prefer not to say</option>
+                </select>
               </div>
               <button className="settings-save-btn" type="submit">Save Changes</button>
             </form>
@@ -170,7 +202,7 @@ export default function Settings() {
           {activeTab === "password" && (
             <form onSubmit={handleChangePassword} className="settings-form">
               <div className="settings-form-header">
-                <div className="settings-form-icon">🔒</div>
+                <div className="settings-form-icon"></div>
                 <div>
                   <h2>Change Password</h2>
                   <p>Keep your account secure with a strong password</p>
@@ -193,7 +225,7 @@ export default function Settings() {
             <div className="delete-section">
               {deleteStep === 1 ? (
                 <>
-                  <div className="delete-warning-icon">⚠️</div>
+                  <div className="delete-warning-icon"></div>
                   <h2>Delete Account</h2>
                   <p>Are you sure you want to delete your account? This action cannot be undone and you will lose all your emotion history.</p>
                   <div className="delete-actions">
@@ -203,7 +235,7 @@ export default function Settings() {
                 </>
               ) : (
                 <form onSubmit={handleDeleteAccount} className="settings-form" style={{maxWidth:'100%'}}>
-                  <div className="delete-warning-icon">🔐</div>
+                  <div className="delete-warning-icon"></div>
                   <h2>Verify Identity</h2>
                   <p style={{marginBottom: '25px', color: '#666'}}>Please enter your password to confirm permanent deletion.</p>
                   <div className="music-input-group">
