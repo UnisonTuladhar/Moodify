@@ -111,7 +111,7 @@ export default function Settings() {
 
       <div className="settings-back-container">
         <button className="back-link-btn" onClick={() => navigate(homeLink)}>
-          ← Back to Home
+          Back to Home
         </button>
       </div>
 
@@ -119,7 +119,6 @@ export default function Settings() {
 
         {/* SIDEBAR */}
         <div className="settings-sidebar">
-          {/* User avatar card */}
           <div className="settings-user-card">
             <div className="settings-avatar">
               {getInitials(user.username)}

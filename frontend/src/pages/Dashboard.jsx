@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import { 
   PieChart, Pie, Cell, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer 
@@ -14,40 +14,42 @@ const COLORS = {
   "Sad": "#3498db",
   "Angry": "#e74c3c",
   "Neutral": "#95a5a6",
-  "Surprise": "#9b59b6",
-};
+  "Surprise": "#9b59b6"
+}
 
 // SVG Play icon
 const PlayIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
     <polygon points="5,3 19,12 5,21"/>
   </svg>
-);
+)
 
 // SVG Pause icon
 const PauseIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
     <rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>
   </svg>
-);
+)
 
 // SVG heart for unlike button
 const HeartFilled = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="#e74c3c" stroke="#e74c3c" strokeWidth="1.5">
     <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
   </svg>
-);
+)
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const location = useLocation();
+
   const [activeTab, setActiveTab] = useState("mood"); 
   const [history, setHistory] = useState([]);
   const [chartData, setChartData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
-  
-  // Filters
-  const [moodFilter, setMoodFilter] = useState("All");
+
+  // Filters 
+  const [moodFilter, setMoodFilter] = useState(location.state?.moodFilter || "All");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
@@ -164,9 +166,9 @@ export default function Dashboard() {
   const currentItems = history.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(history.length / itemsPerPage);
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
   const GRID = "30px 52px 1fr 1fr 110px 40px 40px";
   const GAP  = "0 16px";
-
   const headerRowStyle = {
     display: "grid",
     gridTemplateColumns: GRID,
@@ -176,7 +178,6 @@ export default function Dashboard() {
     background: "#fafafa",
     borderBottom: "1px solid #f0f0f0"
   };
-
   const dataRowStyle = (isHovered) => ({
     display: "grid",
     gridTemplateColumns: GRID,
@@ -187,7 +188,6 @@ export default function Dashboard() {
     background: isHovered ? "#fdf9ff" : "#fff",
     transition: "background 0.15s ease"
   });
-
   const colLabel = {
     fontSize: "0.68rem",
     fontWeight: "700",
@@ -195,7 +195,6 @@ export default function Dashboard() {
     textTransform: "uppercase",
     letterSpacing: "0.7px"
   };
-
   const ellipsis = {
     whiteSpace: "nowrap",
     overflow: "hidden",
@@ -204,7 +203,6 @@ export default function Dashboard() {
 
   return (
     <div className="music-home-container">
-
       {/* TOAST NOTIFICATION */}
       {toast && (
         <div style={{
@@ -237,7 +235,8 @@ export default function Dashboard() {
       </nav>
 
       <div className="dashboard-back-container">
-         <button className="back-link-btn" onClick={() => navigate("/home")}>← Back to Home</button>
+         <button className="back-link-btn" onClick={() => navigate("/home")}>
+ Back to Home</button>
       </div>
 
       <div className="dashboard-content">
@@ -252,13 +251,15 @@ export default function Dashboard() {
                 Mood Detection History
             </button>
             <button className={`tab-btn ${activeTab === 'liked' ? 'active' : ''}`} onClick={() => setActiveTab('liked')}>
-                ❤️ Liked Songs
+                
+ Liked Songs
             </button>
         </div>
 
         <div className="dashboard-panel">
-
-            {/* ── MOOD HISTORY TAB ── */}
+            {/* 
+ MOOD HISTORY TAB 
+ */}
             {activeTab === 'mood' && (
                 <div className="mood-analytics-container">
                     {/* Filters */}
@@ -284,7 +285,7 @@ export default function Dashboard() {
                          <div className="loading-state">Loading data...</div>
                     ) : history.length === 0 ? (
                         <div className="empty-state">
-                            <span style={{fontSize: '3rem'}}>📊</span>
+                            <span style={{fontSize: '3rem'}}></span>
                             <p>No mood data found for this period.</p>
                             <button className="music-main-btn" style={{width: 'auto', marginTop: '10px'}} onClick={() => navigate("/detect-mood")}>Go Detect Mood</button>
                         </div>
@@ -373,7 +374,7 @@ export default function Dashboard() {
                         <div className="loading-state">Loading liked songs...</div>
                     ) : likedSongs.length === 0 ? (
                         <div className="empty-state">
-                            <span style={{fontSize: '3rem'}}>🤍</span>
+                            <span style={{fontSize: '3rem'}}></span>
                             <h3>No Liked Songs Yet</h3>
                             <p>Go to Mood Detection and tap the heart icon next to a song to save it here.</p>
                             <button className="music-main-btn" style={{width: 'auto', marginTop: '10px'}} onClick={() => navigate("/detect-mood")}>
@@ -382,7 +383,6 @@ export default function Dashboard() {
                         </div>
                     ) : (
                         <div style={{background:"#fff", borderRadius:"16px", border:"1px solid #f0f0f0", overflow:"hidden", boxShadow:"0 2px 16px rgba(0,0,0,0.04)"}}>
-
                             <div style={{display:"flex", alignItems:"center", justifyContent:"space-between", padding:"18px 24px 14px 24px", borderBottom:"1px solid #f5f5f5"}}>
                                 <span style={{fontSize:"1rem", fontWeight:"700", color:"#222", display:"flex", alignItems:"center", gap:"8px"}}>
                                     <HeartFilled /> Liked Songs
@@ -391,7 +391,6 @@ export default function Dashboard() {
                                     {likedSongs.length} {likedSongs.length === 1 ? "song" : "songs"}
                                 </span>
                             </div>
-
                             {/* Column labels */}
                             <div style={headerRowStyle}>
                                 <span style={colLabel}>#</span>
@@ -402,7 +401,6 @@ export default function Dashboard() {
                                 <span style={{...colLabel, textAlign:"center"}}>Play</span>
                                 <span style={{...colLabel, textAlign:"center"}}>Unlike</span>
                             </div>
-
                             {likedSongs.map((song, index) => (
                                 <div key={index}>
                                     <div
@@ -419,9 +417,8 @@ export default function Dashboard() {
                                                 width:"44px", height:"44px", borderRadius:"7px",
                                                 background:"linear-gradient(135deg,#f0f0f0,#e4e4e4)",
                                                 display:"flex", alignItems:"center", justifyContent:"center", fontSize:"1.1rem"
-                                            }}>🎵</div>
+                                            }}></div>
                                         )}
-
                                         <div style={{minWidth:0}}>
                                             <p style={{margin:"0 0 3px 0", fontSize:"0.9rem", fontWeight:"600", color:"#1a1a1a", ...ellipsis}}>
                                                 {song.song_title}
@@ -430,11 +427,9 @@ export default function Dashboard() {
                                                 Added {song.liked_at}
                                             </p>
                                         </div>
-
                                         <p style={{margin:0, fontSize:"0.84rem", color:"#555", ...ellipsis}}>
-                                            {song.song_artist || "—"}
+                                            {song.song_artist || ""}
                                         </p>
-
                                         <span style={{
                                             display:"inline-block", padding:"4px 12px",
                                             borderRadius:"20px", fontSize:"0.73rem", fontWeight:"700",
@@ -443,9 +438,8 @@ export default function Dashboard() {
                                             border: `1px solid ${(COLORS[song.song_mood] || "#ddd")}50`,
                                             whiteSpace:"nowrap"
                                         }}>
-                                            {song.song_mood || "—"}
+                                            {song.song_mood || ""}
                                         </span>
-
                                         <div style={{display:"flex", justifyContent:"center"}}>
                                             <button
                                                 onClick={() => handlePreview(song.song_id)}
@@ -464,7 +458,6 @@ export default function Dashboard() {
                                                 {previewId === song.song_id ? <PauseIcon /> : <PlayIcon />}
                                             </button>
                                         </div>
-
                                         <div style={{display:"flex", justifyContent:"center"}}>
                                             <button
                                                 onClick={() => handleUnlikeSong(song)}
@@ -483,7 +476,6 @@ export default function Dashboard() {
                                             </button>
                                         </div>
                                     </div>
-
                                     {previewId === song.song_id && (
                                         <div style={{
                                             padding:"10px 24px 14px 120px",
