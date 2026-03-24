@@ -20,16 +20,74 @@ export default function MoodDetection() {
   const [activeTab, setActiveTab] = useState("all");
   const [likedSongIds, setLikedSongIds] = useState(new Set());
   const [likeToast, setLikeToast] = useState(null);
+  const [frameSrc, setFrameSrc] = useState(null);
+  const frameIntervalRef = useRef(null);
   const userEmail = localStorage.getItem("email");
+
   const handleLogout = () => {
     localStorage.clear();
+    sessionStorage.removeItem("moodify_confirmed_mood");
+    sessionStorage.removeItem("moodify_playlist");
     navigate("/login");
   };
-  
+
   const showToast = (msg, isError = false) => {
     setLikeToast({ msg, isError });
     setTimeout(() => setLikeToast(null), 2500);
   };
+
+  const startFramePolling = () => {
+    // Clear any existing interval before starting a new one
+    if (frameIntervalRef.current) clearInterval(frameIntervalRef.current);
+    frameIntervalRef.current = setInterval(async () => {
+      try {
+        const res = await fetch("http://127.0.0.1:5000/get_frame");
+        if (res.status === 204) return;
+        const blob = await res.blob();
+        setFrameSrc(prev => {
+          if (prev) URL.revokeObjectURL(prev);
+          return URL.createObjectURL(blob);
+        });
+      } catch (err) {
+      }
+    }, 200); 
+  };
+
+  // Stop frame polling and clear the displayed frame
+  const stopFramePolling = () => {
+    if (frameIntervalRef.current) {
+      clearInterval(frameIntervalRef.current);
+      frameIntervalRef.current = null;
+    }
+    setFrameSrc(prev => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
+  };
+
+  useEffect(() => {
+    const savedMood = sessionStorage.getItem("moodify_confirmed_mood");
+    const savedPlaylist = sessionStorage.getItem("moodify_playlist");
+
+    if (savedMood) {
+      setConfirmedMood(savedMood);
+      setIsDetecting(true); 
+      setStabilityScore(3); 
+      if (savedPlaylist) {
+        try {
+          setPlaylist(JSON.parse(savedPlaylist));
+          fetchLikedSongIds(); 
+        } catch (e) {
+          console.error("Failed to restore playlist from session", e);
+        }
+      }
+    }
+
+    return () => {
+      stopFramePolling();
+    };
+  }, []); 
+
   // Save mood to database
   const saveMoodToDB = async (mood) => {
       if (!userEmail) return;
@@ -43,6 +101,7 @@ export default function MoodDetection() {
           console.error("Failed to save mood history", err);
       }
   };
+
   // Fetch playlist based on mood 
   const handleGetPlaylist = async () => {
       if(!confirmedMood) return;
@@ -52,9 +111,8 @@ export default function MoodDetection() {
         const res = await axios.post("http://127.0.0.1:5000/user/get-playlist", { mood: confirmedMood });
         console.log("Data received from server:", res.data);
         setPlaylist(res.data);
-        // Reset tab to "all" whenever a new playlist is loaded
+        sessionStorage.setItem("moodify_playlist", JSON.stringify(res.data));
         setActiveTab("all");
-        // Fetch the user's liked song IDs so hearts render correctly
         fetchLikedSongIds();
       } catch (err) {
           console.error("Error fetching playlist", err);
@@ -76,13 +134,13 @@ export default function MoodDetection() {
           console.error("Failed to fetch liked song IDs:", err);
       }
   };
+
   // Toggle like / unlike for a song
   const handleLikeSong = async (song) => {
       if (!userEmail) {
           showToast("Please log in to like songs.", true);
           return;
       }
-      // Safely build song_id 
       const songIdStr = String(song.id);
 
       // Safely extract all fields with fallbacks for missing data
@@ -121,6 +179,7 @@ export default function MoodDetection() {
           showToast("Error: " + errMsg, true);
       }
   };
+
   useEffect(() => {
     let interval;
     if (isDetecting && !confirmedMood) {
@@ -139,7 +198,15 @@ export default function MoodDetection() {
           setStabilityScore(stabilityCountRef.current);
           if (stabilityCountRef.current >= 3) {
             setConfirmedMood(mood);
-            saveMoodToDB(mood); 
+            sessionStorage.setItem("moodify_confirmed_mood", mood);
+            saveMoodToDB(mood);
+            stopFramePolling();
+            try {
+              await axios.post("http://127.0.0.1:5000/stop_detection");
+              console.log("Detection stopped on backend — camera released.");
+            } catch (stopErr) {
+              console.error("Failed to stop detection on backend", stopErr);
+            }
           }
         } catch (err) {
           console.error("Error fetching mood from backend");
@@ -148,8 +215,22 @@ export default function MoodDetection() {
     }
     return () => clearInterval(interval);
   }, [isDetecting, confirmedMood]); 
-  // Reset logic to allow detecting again
-  const handleDetectAgain = () => {
+
+  const handleStartDetection = async () => {
+    try {
+      await axios.post("http://127.0.0.1:5000/start_detection");
+      console.log("Detection started on backend.");
+    } catch (err) {
+      console.error("Failed to start detection on backend", err);
+    }
+    setIsDetecting(true);
+    startFramePolling();
+  };
+
+  // Reset logic to allow detecting again.
+  const handleDetectAgain = async () => {
+      sessionStorage.removeItem("moodify_confirmed_mood");
+      sessionStorage.removeItem("moodify_playlist");
       setConfirmedMood(null);
       setPlaylist([]);
       setStabilityScore(0);
@@ -157,7 +238,16 @@ export default function MoodDetection() {
       stabilityCountRef.current = 0;
       lastMoodRef.current = "";
       setActiveTab("all");
+      // Re-enable detection on the backend so camera re-opens
+      try {
+        await axios.post("http://127.0.0.1:5000/start_detection");
+        console.log("Detection restarted on backend.");
+      } catch (err) {
+        console.error("Failed to restart detection on backend", err);
+      }
+      startFramePolling();
   };
+
   // Filter playlist based on active tab
   const filteredPlaylist = playlist.filter((song) => {
     if (activeTab === "all") return true;
@@ -166,7 +256,7 @@ export default function MoodDetection() {
     return true;
   });
 
-  // SVG heart icons — avoids emoji rendering issues across browsers/OS
+  // SVG heart icons 
   const HeartFilled = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="#e74c3c" stroke="#e74c3c" strokeWidth="1.5">
       <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
@@ -258,7 +348,7 @@ export default function MoodDetection() {
               </div>
             </div>
             <div style={{display:"flex", gap:"14px", flexWrap:"wrap"}}>
-              <button className="detect-start-btn" onClick={() => setIsDetecting(true)}>
+              <button className="detect-start-btn" onClick={handleStartDetection}>
                 ✦ Start Detection
               </button>
               <button className="detect-back-btn" onClick={() => navigate("/home")}>
@@ -287,8 +377,31 @@ export default function MoodDetection() {
             {/* LEFT SIDE: CAMERA */}
             <div className="camera-side">
                 <div className="camera-box">
-                    <img src={`http://127.0.0.1:5000/video_feed?t=${Date.now()}`}
-                        alt="Live Emotion Feed" className="camera-feed" />
+                    {confirmedMood ? (
+                        <div style={{
+                          width:"100%", height:"100%", minHeight:"300px",
+                          background:"#1a1614", display:"flex", alignItems:"center",
+                          justifyContent:"center", flexDirection:"column", gap:"10px",
+                          borderRadius:"16px", color:"#fff"
+                        }}>
+                          <div style={{fontSize:"3rem"}}>✅</div>
+                          <p style={{margin:0, fontWeight:"600", fontSize:"1.1rem"}}>Mood Captured!</p>
+                          <p style={{margin:0, color:"#aaa", fontSize:"0.85rem"}}>Camera stopped to save resources</p>
+                        </div>
+                    ) : (
+                        frameSrc ? (
+                            <img src={frameSrc} alt="Live Emotion Feed" className="camera-feed"
+                                style={{width:"100%", height:"100%", objectFit:"cover", borderRadius:"16px"}} />
+                        ) : (
+                            <div style={{
+                              width:"100%", height:"100%", minHeight:"300px",
+                              background:"#111", display:"flex", alignItems:"center",
+                              justifyContent:"center", borderRadius:"16px", color:"#aaa"
+                            }}>
+                              <p>Starting camera...</p>
+                            </div>
+                        )
+                    )}
                 </div>
                 {/* STABILITY PROGRESS BAR */}
                 <div className="stability-container">
