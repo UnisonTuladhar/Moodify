@@ -96,7 +96,7 @@ export default function Home() {
             <div className="feat-card">
               <div className="feat-icon"> 🧠</div>
               <h3>AI Detection</h3>
-              <p>Our trained neural network identifies emotions like Happy, Sad, Angry, Neutral, Surprised, Fearful and Disgusted.</p>
+              <p>Our trained neural network identifies emotions like Happy, Sad, Angry, Neutral and Surprised.</p>
             </div>
             <div className="feat-card">
               <div className="feat-icon"> 🎵</div>
@@ -115,7 +115,6 @@ export default function Home() {
             <div className="mood-tile angry"> 😠 Angry</div>
             <div className="mood-tile neutral"> 😐 Neutral</div>
             <div className="mood-tile surprise"> 😲 Surprise</div>
-            <div className="mood-tile fear"> 😨 Fear</div>
           </div>
         </section>
 

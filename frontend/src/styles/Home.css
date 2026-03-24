@@ -237,7 +237,7 @@
 
 .mood-grid {
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 16px;
     margin-top: 30px;
 }
@@ -265,7 +265,6 @@
 .mood-tile.angry    { border-bottom: 5px solid #e74c3c; }
 .mood-tile.neutral  { border-bottom: 5px solid #95a5a6; }
 .mood-tile.surprise { border-bottom: 5px solid #9b59b6; }
-.mood-tile.fear     { border-bottom: 5px solid #2c3e50; }
 
 .cta-banner {
     background: linear-gradient(135deg, #1a1614 0%, #3d1a4d 100%);
