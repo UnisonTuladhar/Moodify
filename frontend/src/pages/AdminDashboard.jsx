@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import { 
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -20,6 +20,7 @@ const EMOTION_COLORS = {
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
+  const location = useLocation();
   const[showDropdown, setShowDropdown] = useState(false);
   const [activeTab, setActiveTab] = useState("users");
   
@@ -55,6 +56,14 @@ export default function AdminDashboard() {
     localStorage.clear();
     navigate("/login");
   };
+
+  // Auto-open Add Song form if navigated here via Quick Actions on AdminHome
+  useEffect(() => {
+    if (location.state?.openAddSong) {
+      setActiveTab("music");
+      setShowAddSong(true);
+    }
+  }, [location.state]);
 
   useEffect(() => {
     if (activeTab === "users") {

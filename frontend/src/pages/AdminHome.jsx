@@ -102,7 +102,8 @@ export default function AdminHome() {
   return (
     <div className="music-home-container admin-home-bg">
 
-      <div className="admin-hero-panel">
+      {/* Hero panel now covers full viewport height */}
+      <div className="admin-hero-panel" style={{ minHeight: "100vh" }}>
         <nav className="music-nav admin-hero-nav">
           <div className="music-logo admin-hero-logo" onClick={() => navigate("/admin-home")} style={{cursor:'pointer'}}>
             Moodify
@@ -198,14 +199,13 @@ export default function AdminHome() {
                 <div className="admin-stat-accent accent-green"></div>
               </div>
 
-              {/* Quick Actions Card */}
+              {/* Quick Actions Card — navigate to add song in dashboard */}
               <div className="admin-stat-card admin-quick-actions">
                 <div className="admin-stat-icon">⚡</div>
                 <div className="admin-stat-info">
                   <p className="admin-stat-label">Quick Actions</p>
                   <div style={{display:'flex', gap:'8px', marginTop:'8px', flexWrap:'wrap'}}>
-                    <button className="admin-quick-btn" onClick={() => navigate("/admin-dashboard")}>Dashboard</button>
-                    <button className="admin-quick-btn" onClick={() => navigate("/admin-settings")}>Settings</button>
+                    <button className="admin-quick-btn" onClick={() => navigate("/admin-dashboard", { state: { openAddSong: true } })}>+ Add New Song</button>
                   </div>
                 </div>
                 <div className="admin-stat-accent accent-blue"></div>
