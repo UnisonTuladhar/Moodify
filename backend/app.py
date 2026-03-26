@@ -313,53 +313,83 @@ def get_admin_emotion_analytics():
         if db.is_connected():
             db.close()
 
-# Combined Playlist 
+# Combined Playlist — truly randomized results every call (language filter removed, Jamendo only supports English)
 @app.post("/user/get-playlist")
 def get_playlist_by_mood():
     data = request.json
     mood = data.get('mood')
-    
-    mood_tags = {
-        'Happy': 'dance',        # Upbeat / Dance / Pop
-        'Sad': 'upbeat',         # Energetic / Uplifting to cheer up
-        'Angry': 'chillout',     # Calm / Chillout to calm down
-        'Surprise': 'pop',       # Pop / Trending
-        'Neutral': 'acoustic',   # Chill / Acoustic / Ambient
+
+    # Multiple tag options per mood — we call ALL of them and pool the results
+    # so we have a large collection to randomly sample from each time
+    mood_tag_options = {
+        'Happy':   ['pop', 'dance', 'upbeat', 'funk', 'party', 'happy', 'feel+good'],
+        'Sad':     ['upbeat', 'motivational', 'energetic', 'positive', 'inspiring', 'cheerful'],
+        'Angry':   ['chillout', 'relaxing', 'calm', 'meditation', 'ambient', 'peaceful'],
+        'Surprise':['pop', 'electronic', 'indie', 'alternative', 'catchy', 'fun'],
+        'Neutral': ['acoustic', 'chill', 'lofi', 'jazz', 'study', 'soft'],
     }
 
-    tag = mood_tags.get(mood, 'pop')
+    tag_list = mood_tag_options.get(mood, ['pop'])
 
-    url = f"https://api.jamendo.com/v3.0/tracks/?client_id={JAMENDO_CLIENT_ID}&format=json&limit=20&tags={tag}&audioformat=mp32"
+    api_songs = []
 
-    api_songs =[]
-    try:
-        print(f"DEBUG: Calling Jamendo API for mood: {mood} with tag: {tag}...")
-        response = requests.get(url, timeout=10)
-        if response.status_code == 200:
-            results = response.json().get("results",[])
-            for track in results:
-                api_songs.append({
-                    "id": f"api_{track['id']}",
-                    "title": track["name"],
-                    "artist": track["artist_name"],
-                    "mood": mood,
-                    "language": "Online Library",
-                    "file_path": track["audio"], 
-                    "image": track["album_image"],
-                    "is_api": True
-                })
-        else:
-            print(f"Jamendo API returned status: {response.status_code}")
-    except Exception as e:
-        print(f"Jamendo API failed: {e}")
+    # Pick 3 different random tags from the mood's list to query in parallel
+    # This gives us a much larger, more varied pool to sample from
+    selected_tags = random.sample(tag_list, min(3, len(tag_list)))
 
-    # Fetching local songs from DB
+    all_tracks = {}  # Use dict keyed by track id to deduplicate across tag results
+
+    for tag in selected_tags:
+        # Use a random offset per tag call to avoid always getting the same page
+        offset = random.randint(0, 60)
+        url = (
+            f"https://api.jamendo.com/v3.0/tracks/"
+            f"?client_id={JAMENDO_CLIENT_ID}"
+            f"&format=json"
+            f"&limit=50"        # Fetch 50 per tag so we have a wide pool
+            f"&offset={offset}"
+            f"&tags={tag}"
+            f"&audioformat=mp32"
+        )
+        try:
+            print(f"DEBUG: Jamendo tag={tag}, offset={offset}, mood={mood}")
+            response = requests.get(url, timeout=10)
+            if response.status_code == 200:
+                results = response.json().get("results", [])
+                for track in results:
+                    # Deduplicate by track id
+                    all_tracks[track['id']] = track
+            else:
+                print(f"Jamendo returned status {response.status_code} for tag {tag}")
+        except Exception as e:
+            print(f"Jamendo API failed for tag {tag}: {e}")
+
+    # Now randomly pick 15 tracks from the full pooled collection
+    pool = list(all_tracks.values())
+    random.shuffle(pool)
+    chosen = pool[:15]
+
+    for track in chosen:
+        api_songs.append({
+            "id": f"api_{track['id']}",
+            "title": track["name"],
+            "artist": track["artist_name"],
+            "mood": mood,
+            "language": "English",
+            "file_path": track["audio"],
+            "image": track["album_image"],
+            "is_api": True
+        })
+
+    # Fetching local songs from DB — filtered by mood, randomised each time
     db = get_db_connection()
     cursor = db.cursor(dictionary=True)
-    local_songs =[]
+    local_songs = []
     try:
+        # Pull local admin songs that match the mood, random order
         query = "SELECT * FROM songs WHERE mood=%s ORDER BY RAND() LIMIT 5"
         cursor.execute(query, (mood,))
+
         db_results = cursor.fetchall()
         for s in db_results:
             local_songs.append({
@@ -378,7 +408,10 @@ def get_playlist_by_mood():
         if db.is_connected():
             db.close()
 
-    return jsonify(local_songs + api_songs), 200
+    # Combine local songs first then api songs so local always appears at top
+    combined = local_songs + api_songs
+
+    return jsonify(combined), 200
 
 @app.route('/songs/<path:filename>')
 def serve_songs(filename):
@@ -497,7 +530,7 @@ def get_all_users():
     db = get_db_connection()
     cursor = db.cursor(dictionary=True)
     try:
-        cursor.execute("SELECT id, username, email, is_admin, is_verified FROM users ORDER BY id DESC")
+        cursor.execute("SELECT id, username, email, is_admin, is_verified, DATE_FORMAT(created_at, '%Y-%m-%d') as registered_date FROM users ORDER BY id DESC")
         users = cursor.fetchall()
         return jsonify(users), 200
     except Exception as e:
@@ -562,7 +595,7 @@ def update_profile():
     finally:
         db.close()
 
-# Change Password
+# Change Password Logic
 @app.post("/user/change-password")
 def change_password():
     data = request.json
@@ -796,9 +829,8 @@ def get_liked_song_ids():
             "SELECT song_id FROM liked_songs WHERE email=%s",
             (email,)
         )
-        rows = cursor.fetchall()
-        ids = [row["song_id"] for row in rows]
-        return jsonify(ids), 200
+        ids = cursor.fetchall()
+        return jsonify([row["song_id"] for row in ids]), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     finally:
