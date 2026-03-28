@@ -37,7 +37,6 @@ export default function MoodDetection() {
   };
 
   const startFramePolling = () => {
-    // Clear any existing interval before starting a new one
     if (frameIntervalRef.current) clearInterval(frameIntervalRef.current);
     frameIntervalRef.current = setInterval(async () => {
       try {
@@ -53,7 +52,6 @@ export default function MoodDetection() {
     }, 200); 
   };
 
-  // Stop frame polling and clear the displayed frame
   const stopFramePolling = () => {
     if (frameIntervalRef.current) {
       clearInterval(frameIntervalRef.current);
@@ -102,14 +100,17 @@ export default function MoodDetection() {
       }
   };
 
-  // Fetch playlist based on mood 
+  // Fetch playlist based on mood
   const handleGetPlaylist = async () => {
       if(!confirmedMood) return;
       setPlaylistLoading(true);
       try {
         console.log("Requesting tracks for mood:", confirmedMood);
-        const res = await axios.post("http://127.0.0.1:5000/user/get-playlist", { mood: confirmedMood });
+        const res = await axios.post("http://127.0.0.1:5000/user/get-playlist", {
+          mood: confirmedMood
+        });
         console.log("Data received from server:", res.data);
+
         setPlaylist(res.data);
         sessionStorage.setItem("moodify_playlist", JSON.stringify(res.data));
         setActiveTab("all");
@@ -238,7 +239,6 @@ export default function MoodDetection() {
       stabilityCountRef.current = 0;
       lastMoodRef.current = "";
       setActiveTab("all");
-      // Re-enable detection on the backend so camera re-opens
       try {
         await axios.post("http://127.0.0.1:5000/start_detection");
         console.log("Detection restarted on backend.");
@@ -295,13 +295,13 @@ export default function MoodDetection() {
 
       <div className={`detect-hero-panel ${isDetecting ? "detect-hero-compact" : ""}`}>
 
-        <nav className="music-nav detect-hero-nav">
+        <nav className="music-nav detect-hero-nav" style={{position: "relative", zIndex: 200}}>
           <div className="music-logo" onClick={() => navigate("/home")} style={{cursor:"pointer"}}>Moodify</div>
-          <div className="profile-container" style={{position:"relative"}}>
+          <div className="profile-container" style={{position:"relative", zIndex: 200}}>
             <img src={profileImg} alt="profile" className="profile-icon-img"
               onClick={() => setShowDropdown(!showDropdown)} />
             {showDropdown && (
-              <div className="profile-dropdown" style={{right:0, left:"auto"}}>
+              <div className="profile-dropdown" style={{right:0, left:"auto", zIndex: 300}}>
                 <p onClick={() => navigate("/home")}>Home</p>
                 <p onClick={() => navigate("/dashboard")}>Dashboard</p>
                 <p onClick={() => navigate("/settings")}>Settings</p>
@@ -427,6 +427,7 @@ export default function MoodDetection() {
                         <>
                             <p style={{fontSize:"1rem", color:"#666"}}>Detected Mood:</p>
                             <h2 className="detected-mood-text">{confirmedMood}</h2>
+
                             <button className="recommendation-btn" onClick={handleGetPlaylist} disabled={playlistLoading}>
                                 {playlistLoading ? "Loading Tracks..." : "🎵 Get Playlist"}
                             </button>

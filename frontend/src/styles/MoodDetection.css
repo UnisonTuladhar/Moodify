@@ -7,7 +7,7 @@
     width: 100%;
     min-height: 100vh;
     background: #ffffff;
-    overflow: hidden;
+    overflow: visible; 
     display: flex;
     flex-direction: column;
     transition: min-height 0.4s ease;
@@ -18,7 +18,7 @@
     height: auto;
 }
 
-/* Diagonal right accent — same lavender as Home */
+/* Diagonal right accent */
 .detect-diagonal-overlay {
     position: absolute;
     top: 0;
@@ -67,12 +67,13 @@
     height: 45px;
     border-style: solid;
 }
+
 .detect-tl { top: 0; left: 0;  border-width: 4px 0 0 4px; border-color: #ff4e00; }
 .detect-tr { top: 0; right: 0; border-width: 4px 4px 0 0; border-color: #ec008c; }
 .detect-bl { bottom: 0; left: 0;  border-width: 0 0 4px 4px; border-color: #ec008c; }
 .detect-br { bottom: 0; right: 0; border-width: 0 4px 4px 0; border-color: #ff4e00; }
 
-/* Face emoji inside scan box */
+/* emoji inside scan box */
 .detect-scan-face {
     position: absolute;
     top: 50%;
@@ -91,7 +92,7 @@
     background: #ffffff !important;
     box-shadow: 0 1px 0 rgba(0,0,0,0.07) !important;
     position: relative;
-    z-index: 10;
+    z-index: 200; /* Raised so nav always sits above the compact bar */
     padding: 18px 60px;
 }
 
@@ -252,7 +253,7 @@
     50%       { opacity: 0.2; }
 }
 
-/* ── DETECTION LAYOUT (camera active) ── */
+/* DETECTION LAYOUT (camera active) */
 .detection-wrapper {
     padding-top: 20px !important;
     background: #f4f6f9;
@@ -446,7 +447,19 @@
     background: white;
 }
 
-/* ── RESPONSIVE ── */
+.detect-hero-nav .profile-container {
+    position: relative !important;
+    z-index: 200 !important; 
+}
+
+.detect-hero-nav .profile-dropdown {
+    right: 0 !important;
+    left: auto !important;
+    position: absolute !important;
+    z-index: 999 !important;
+}
+
+/* RESPONSIVE */
 @media (max-width: 950px) {
     .detection-layout {
         flex-direction: column;
@@ -503,6 +516,7 @@
 .detect-hero-panel.detect-hero-compact .detect-scan-box {
     display: none !important;
 }
+
 .detect-hero-panel.detect-hero-compact {
     background: #f4f6f9;
 }
@@ -511,13 +525,16 @@
     padding-bottom: 0 !important;
     margin-bottom: 0 !important;
 }
+
 .detect-page-bg footer,
 .detect-page-bg > footer {
     margin-top: 0 !important;
 }
+
 .detect-page-bg {
     background-color: #f4f6f9 !important;
 }
+
 .music-home-content.detection-wrapper {
     background: #f4f6f9 !important;
 }

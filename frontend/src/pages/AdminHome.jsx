@@ -101,8 +101,6 @@ export default function AdminHome() {
   };
   return (
     <div className="music-home-container admin-home-bg">
-
-      {/* Hero panel now covers full viewport height */}
       <div className="admin-hero-panel" style={{ minHeight: "100vh" }}>
         <nav className="music-nav admin-hero-nav">
           <div className="music-logo admin-hero-logo" onClick={() => navigate("/admin-home")} style={{cursor:'pointer'}}>
@@ -155,7 +153,6 @@ export default function AdminHome() {
         </div>
       </div>
 
-      {/* ── ANALYTICS CONTENT ── */}
       <div className="admin-home-content">
 
         {loading ? (
@@ -165,7 +162,6 @@ export default function AdminHome() {
           </div>
         ) : (
           <>
-            {/* SUMMARY STAT CARDS */}
             <div className="admin-stats-grid">
               {/* Total Moods Today */}
               <div className="admin-stat-card">
@@ -199,7 +195,7 @@ export default function AdminHome() {
                 <div className="admin-stat-accent accent-green"></div>
               </div>
 
-              {/* Quick Actions Card — navigate to add song in dashboard */}
+              {/* Quick Actions Card */}
               <div className="admin-stat-card admin-quick-actions">
                 <div className="admin-stat-icon">⚡</div>
                 <div className="admin-stat-info">
@@ -316,7 +312,6 @@ export default function AdminHome() {
           </>
         )}
       </div>
-
       <Footer />
     </div>
   );
