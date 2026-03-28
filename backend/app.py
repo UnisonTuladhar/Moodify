@@ -313,14 +313,13 @@ def get_admin_emotion_analytics():
         if db.is_connected():
             db.close()
 
-# Combined Playlist — truly randomized results every call (language filter removed, Jamendo only supports English)
+# Combined Playlist
 @app.post("/user/get-playlist")
 def get_playlist_by_mood():
     data = request.json
     mood = data.get('mood')
 
-    # Multiple tag options per mood — we call ALL of them and pool the results
-    # so we have a large collection to randomly sample from each time
+    # Multiple tag options per mood
     mood_tag_options = {
         'Happy':   ['pop', 'dance', 'upbeat', 'funk', 'party', 'happy', 'feel+good'],
         'Sad':     ['upbeat', 'motivational', 'energetic', 'positive', 'inspiring', 'cheerful'],
@@ -333,20 +332,18 @@ def get_playlist_by_mood():
 
     api_songs = []
 
-    # Pick 3 different random tags from the mood's list to query in parallel
-    # This gives us a much larger, more varied pool to sample from
+    # Pick 3 different random tags from the mood's list
     selected_tags = random.sample(tag_list, min(3, len(tag_list)))
 
-    all_tracks = {}  # Use dict keyed by track id to deduplicate across tag results
+    all_tracks = {}  
 
     for tag in selected_tags:
-        # Use a random offset per tag call to avoid always getting the same page
         offset = random.randint(0, 60)
         url = (
             f"https://api.jamendo.com/v3.0/tracks/"
             f"?client_id={JAMENDO_CLIENT_ID}"
             f"&format=json"
-            f"&limit=50"        # Fetch 50 per tag so we have a wide pool
+            f"&limit=50"        
             f"&offset={offset}"
             f"&tags={tag}"
             f"&audioformat=mp32"
@@ -357,14 +354,13 @@ def get_playlist_by_mood():
             if response.status_code == 200:
                 results = response.json().get("results", [])
                 for track in results:
-                    # Deduplicate by track id
                     all_tracks[track['id']] = track
             else:
                 print(f"Jamendo returned status {response.status_code} for tag {tag}")
         except Exception as e:
             print(f"Jamendo API failed for tag {tag}: {e}")
 
-    # Now randomly pick 15 tracks from the full pooled collection
+    # Now randomly pick 15 tracks
     pool = list(all_tracks.values())
     random.shuffle(pool)
     chosen = pool[:15]
@@ -381,12 +377,11 @@ def get_playlist_by_mood():
             "is_api": True
         })
 
-    # Fetching local songs from DB — filtered by mood, randomised each time
+    # Fetching local songs from DB
     db = get_db_connection()
     cursor = db.cursor(dictionary=True)
     local_songs = []
     try:
-        # Pull local admin songs that match the mood, random order
         query = "SELECT * FROM songs WHERE mood=%s ORDER BY RAND() LIMIT 5"
         cursor.execute(query, (mood,))
 
@@ -408,7 +403,7 @@ def get_playlist_by_mood():
         if db.is_connected():
             db.close()
 
-    # Combine local songs first then api songs so local always appears at top
+    # Combine local songs
     combined = local_songs + api_songs
 
     return jsonify(combined), 200
@@ -739,7 +734,7 @@ def delete_account():
     finally:
         db.close()
 
-# Like or Unlike a song (toggle)
+# Like or Unlike a song 
 @app.post("/user/like-song")
 def like_song():
     data = request.json
