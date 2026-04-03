@@ -8,7 +8,6 @@ import {
 import "../styles/Shared.css";
 import "../styles/Admin.css";
 import profileImg from "../images/profile.jpg"; 
-
 // Define colors specifically for the emotion bar chart
 const EMOTION_COLORS = {
   "Happy": "#FFCC00",
@@ -18,53 +17,53 @@ const EMOTION_COLORS = {
   "Surprise": "#9b59b6",
 };
 
+// Pagination items per page
+const USERS_PER_PAGE = 10;
+const SONGS_PER_PAGE = 10;
+
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const location = useLocation();
   const[showDropdown, setShowDropdown] = useState(false);
   const [activeTab, setActiveTab] = useState("users");
-  
   // Data State
   const [users, setUsers] = useState([]);
   const [songs, setSongs] = useState([]); 
   const [filteredUsers, setFilteredUsers] = useState([]); 
   const [emotionAnalyticsData, setEmotionAnalyticsData] = useState([]); 
   const[loading, setLoading] = useState(true);
-
   // Filters
   const [searchQuery, setSearchQuery] = useState("");
   const [songSearchQuery, setSongSearchQuery] = useState(""); 
+  const [songMoodFilter, setSongMoodFilter] = useState("All"); 
   const[startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const[chartData, setChartData] = useState([]);
-
   // Add User State
   const [showAddUser, setShowAddUser] = useState(false);
   const [newUser, setNewUser] = useState({ username: "", email: "", password: "", is_admin: "0" });
-
   // Add Song State
   const[showAddSong, setShowAddSong] = useState(false);
   const [newSong, setNewSong] = useState({ title: "", artist: "", mood: "Happy", language: "", file: null });
-
   // Edit State
   const [editUserId, setEditUserId] = useState(null);
   const [editFormData, setEditFormData] = useState({ username: "", email: "" });
+  // Pagination State
+  const [userCurrentPage, setUserCurrentPage] = useState(1);
+  const [songCurrentPage, setSongCurrentPage] = useState(1);
 
   const emotionOptions = ['Angry', 'Happy', 'Neutral', 'Sad', 'Surprise'];
-
   const handleLogout = () => {
     localStorage.clear();
     navigate("/login");
   };
 
-  // Auto-open Add Song form if navigated here via Quick Actions on AdminHome
   useEffect(() => {
     if (location.state?.openAddSong) {
       setActiveTab("music");
       setShowAddSong(true);
     }
   }, [location.state]);
-
   useEffect(() => {
     if (activeTab === "users") {
       fetchUsers();
@@ -72,18 +71,26 @@ export default function AdminDashboard() {
       fetchSongs();
     }
   }, [activeTab]);
-
   useEffect(() => {
     if (activeTab === "emotions") {
       fetchEmotionAnalytics(); 
     }
   }, [activeTab, startDate, endDate]);
-
   useEffect(() => {
     if(users.length > 0 && activeTab === "users") {
         processData();
     }
   }, [users, startDate, endDate, searchQuery, activeTab]);
+
+  // Reset user page when filters change
+  useEffect(() => {
+    setUserCurrentPage(1);
+  }, [searchQuery, startDate, endDate]);
+
+  // Reset song page when filters change
+  useEffect(() => {
+    setSongCurrentPage(1);
+  }, [songSearchQuery, songMoodFilter]);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -102,7 +109,6 @@ export default function AdminDashboard() {
       setLoading(false);
     }
   };
-
   const fetchSongs = async () => {
     setLoading(true);
     try {
@@ -119,7 +125,6 @@ export default function AdminDashboard() {
       setLoading(false);
     }
   };
-
   // Fetch function for Emotion Analytics 
   const fetchEmotionAnalytics = async () => {
     setLoading(true);
@@ -136,10 +141,8 @@ export default function AdminDashboard() {
         setLoading(false);
     }
   };
-
   const processData = () => {
     let result = [...users]; 
-
     // Filter by Search
     if (searchQuery) {
       const lowerQuery = searchQuery.toLowerCase();
@@ -148,7 +151,6 @@ export default function AdminDashboard() {
         (u.email && u.email.toLowerCase().includes(lowerQuery))
       );
     }
-
     // Filter by Date 
     if (startDate) {
       result = result.filter(u => {
@@ -162,16 +164,13 @@ export default function AdminDashboard() {
         return new Date(u.registered_date) <= new Date(endDate);
       });
     }
-
     setFilteredUsers(result);
-
     // Prepare Chart Data
     const dateCounts = {};
     result.forEach(u => {
       const date = u.registered_date ? u.registered_date : "N/A";
       dateCounts[date] = (dateCounts[date] || 0) + 1;
     });
-
     const graphData = Object.keys(dateCounts).map(date => ({
       date,
       Registrations: dateCounts[date]
@@ -183,12 +182,10 @@ export default function AdminDashboard() {
     
     setChartData(graphData);
   };
-
   const handleClearDates = () => {
       setStartDate("");
       setEndDate("");
   };
-
   const handleAddUser = async (e) => {
     e.preventDefault();
     try {
@@ -201,7 +198,6 @@ export default function AdminDashboard() {
       alert(err.response?.data?.error || "Failed to create user");
     }
   };
-
   const handleAddSong = async (e) => {
       e.preventDefault();
       
@@ -211,7 +207,6 @@ export default function AdminDashboard() {
       formData.append("mood", newSong.mood);
       formData.append("language", newSong.language);
       formData.append("file", newSong.file);
-
       try {
         const res = await axios.post("http://127.0.0.1:5000/admin/add-song", formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
@@ -224,7 +219,6 @@ export default function AdminDashboard() {
         alert(err.response?.data?.error || "Failed to upload song");
       }
   };
-
   const handleDeleteUser = async (id) => {
     if (window.confirm("Are you sure you want to delete this user?")) {
       try {
@@ -235,7 +229,6 @@ export default function AdminDashboard() {
       }
     }
   };
-
   const handleDeleteSong = async (id) => {
       if (window.confirm("Are you sure you want to delete this song?")) {
         try {
@@ -246,12 +239,10 @@ export default function AdminDashboard() {
         }
       }
   };
-
   const handleEditClick = (user) => {
     setEditUserId(user.id);
     setEditFormData({ username: user.username, email: user.email });
   };
-
   const handleSaveEdit = async () => {
     try {
       await axios.post("http://127.0.0.1:5000/admin/edit-user", {
@@ -266,11 +257,80 @@ export default function AdminDashboard() {
     }
   };
 
-  // Filter songs based on search
-  const filteredSongs = songs.filter(s => 
-    s.title.toLowerCase().includes(songSearchQuery.toLowerCase()) || 
-    s.artist.toLowerCase().includes(songSearchQuery.toLowerCase())
+  // Filter songs based on search AND mood dropdown
+  const filteredSongs = songs.filter(s => {
+    const matchesSearch = 
+      s.title.toLowerCase().includes(songSearchQuery.toLowerCase()) || 
+      s.artist.toLowerCase().includes(songSearchQuery.toLowerCase());
+    const matchesMood = songMoodFilter === "All" || s.mood === songMoodFilter;
+    return matchesSearch && matchesMood;
+  });
+
+  // Users pagination
+  const userTotalPages = Math.ceil(filteredUsers.length / USERS_PER_PAGE);
+  const paginatedUsers = filteredUsers.slice(
+    (userCurrentPage - 1) * USERS_PER_PAGE,
+    userCurrentPage * USERS_PER_PAGE
   );
+
+  // Songs pagination
+  const songTotalPages = Math.ceil(filteredSongs.length / SONGS_PER_PAGE);
+  const paginatedSongs = filteredSongs.slice(
+    (songCurrentPage - 1) * SONGS_PER_PAGE,
+    songCurrentPage * SONGS_PER_PAGE
+  );
+
+  // Render pagination controls
+  const renderPagination = (currentPage, totalPages, setPage) => {
+    if (totalPages <= 1) return null;
+    const pages = [];
+    for (let i = 1; i <= totalPages; i++) {
+      pages.push(i);
+    }
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px', marginTop: '20px', paddingTop: '15px', borderTop: '1px solid #f0f0f0' }}>
+        <button
+          onClick={() => setPage(p => Math.max(1, p - 1))}
+          disabled={currentPage === 1}
+          style={{
+            padding: '7px 14px', borderRadius: '8px', border: '1px solid #ddd',
+            background: currentPage === 1 ? '#f5f5f5' : '#fff',
+            color: currentPage === 1 ? '#bbb' : '#555',
+            cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+            fontWeight: '600', fontSize: '0.85rem', transition: '0.2s'
+          }}
+        >← Prev</button>
+        {pages.map(p => (
+          <button
+            key={p}
+            onClick={() => setPage(p)}
+            style={{
+              padding: '7px 12px', borderRadius: '8px', border: 'none', minWidth: '35px',
+              background: currentPage === p ? 'linear-gradient(90deg, #ff4e00, #ec008c)' : '#f0f0f0',
+              color: currentPage === p ? '#fff' : '#555',
+              cursor: 'pointer', fontWeight: '600', fontSize: '0.85rem',
+              boxShadow: currentPage === p ? '0 4px 10px rgba(236,0,140,0.2)' : 'none',
+              transition: '0.2s'
+            }}
+          >{p}</button>
+        ))}
+        <button
+          onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+          disabled={currentPage === totalPages}
+          style={{
+            padding: '7px 14px', borderRadius: '8px', border: '1px solid #ddd',
+            background: currentPage === totalPages ? '#f5f5f5' : '#fff',
+            color: currentPage === totalPages ? '#bbb' : '#555',
+            cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+            fontWeight: '600', fontSize: '0.85rem', transition: '0.2s'
+          }}
+        >Next →</button>
+        <span style={{ color: '#aaa', fontSize: '0.8rem', marginLeft: '8px' }}>
+          Page {currentPage} of {totalPages}
+        </span>
+      </div>
+    );
+  };
 
   return (
     <div className="music-home-container" style={{background: "#f0f2f5"}}>
@@ -296,19 +356,16 @@ export default function AdminDashboard() {
           )}
         </div>
       </nav>
-
       <div className="settings-back-container">
          <button className="back-link-btn" onClick={() => navigate("/admin-home")}>
-           ← Back to Home
+           Back to Home
          </button>
       </div>
-
       <div className="music-home-content">
         <header className="music-welcome-header">
           <h1>System Dashboard</h1>
           <p>Analytics and Management Tools</p>
         </header>
-
         {/* Dashboard Tabs */}
         <div className="dashboard-tabs">
             <button 
@@ -330,14 +387,13 @@ export default function AdminDashboard() {
                 Emotion Analytics
             </button>
         </div>
-
         {/* USER MANAGEMENT TAB */}
         {activeTab === "users" && (
           <div className="admin-dashboard-layout">
             
             {/* Global Date Filter Section */}
             <div className="music-card full-width-card filter-card-row">
-                <span className="filter-label">📅 Filter Records by Date:</span>
+                <span className="filter-label">Filter Records by Date:</span>
                 <div className="date-inputs-wrapper">
                     <div className="input-wrap">
                         <label>From:</label>
@@ -352,7 +408,6 @@ export default function AdminDashboard() {
                     )}
                 </div>
             </div>
-
             {/* Graph Section */}
             <div className="music-card full-width-card" style={{ marginBottom: "40px", textAlign: "left" }}>
               <h3>User Registration Trends</h3>
@@ -369,7 +424,6 @@ export default function AdminDashboard() {
                 </ResponsiveContainer>
               </div>
             </div>
-
             {/* Table Controls */}
             <div className="table-controls-bar">
                 <div className="search-wrapper">
@@ -388,7 +442,6 @@ export default function AdminDashboard() {
                     {showAddUser ? "✕ Cancel" : "+ Add New User"}
                 </button>
             </div>
-
             {/* Add User Form */}
             {showAddUser && (
                 <div className="music-card full-width-card slide-down" style={{marginBottom: "30px", textAlign: "left", background: "#fdfdfd", border: "1px solid #eee"}}>
@@ -425,10 +478,16 @@ export default function AdminDashboard() {
                     </form>
                 </div>
             )}
-
             {/* Users Table */}
             <div className="music-card full-width-card" style={{ textAlign: "left", cursor: "default", overflowX: "auto" }}>
-              <h3 style={{ borderBottom: "2px solid #f0f0f0", paddingBottom: "15px" }}>Registered Users List</h3>
+              <h3 style={{ borderBottom: "2px solid #f0f0f0", paddingBottom: "15px" }}>
+                Registered Users List
+                {filteredUsers.length > 0 && (
+                  <span style={{ fontSize: '0.85rem', fontWeight: '400', color: '#aaa', marginLeft: '10px' }}>
+                    ({filteredUsers.length} total — showing {((userCurrentPage - 1) * USERS_PER_PAGE) + 1}–{Math.min(userCurrentPage * USERS_PER_PAGE, filteredUsers.length)})
+                  </span>
+                )}
+              </h3>
               
               {loading ? (
                 <div style={{textAlign: 'center', padding: '40px', color: '#666'}}>Loading users...</div>
@@ -437,78 +496,78 @@ export default function AdminDashboard() {
                   <p>No users found matching criteria.</p>
                 </div>
               ) : (
-                <table style={{ width: "100%", marginTop: "10px", borderCollapse: "collapse" }}>
-                  <thead>
-                    <tr style={{ textAlign: "left", color: "#8e44ad", fontSize: '0.95rem' }}>
-                      <th style={{ padding: "15px", borderBottom: "2px solid #eee" }}>S.N.</th>
-                      <th style={{ padding: "15px", borderBottom: "2px solid #eee" }}>Username</th>
-                      <th style={{ padding: "15px", borderBottom: "2px solid #eee" }}>Email Address</th>
-                      <th style={{ padding: "15px", borderBottom: "2px solid #eee" }}>Role</th>
-                      <th style={{ padding: "15px", borderBottom: "2px solid #eee" }}>Registered Date</th>
-                      <th style={{ padding: "15px", borderBottom: "2px solid #eee" }}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredUsers.map((user, index) => (
-                      <tr key={user.id || index} className="table-row">
-                        <td style={{ padding: "15px" }}>{index + 1}</td>
-                        
-                        <td style={{ padding: "15px", fontWeight: "600" }}>
-                          {editUserId === user.id ? (
-                            <input 
-                              value={editFormData.username} 
-                              onChange={(e) => setEditFormData({...editFormData, username: e.target.value})}
-                              className="edit-input"
-                            />
-                          ) : user.username}
-                        </td>
-
-                        <td style={{ padding: "15px", color: "#555" }}>
-                           {editUserId === user.id ? (
-                            <input 
-                              value={editFormData.email} 
-                              onChange={(e) => setEditFormData({...editFormData, email: e.target.value})}
-                              className="edit-input"
-                            />
-                          ) : user.email}
-                        </td>
-
-                        <td style={{ padding: "15px" }}>
-                            <span className={user.is_admin === 1 ? "role-badge admin" : "role-badge user"}>
-                                {user.is_admin === 1 ? "Admin" : "User"}
-                            </span>
-                        </td>
-
-                        <td style={{ padding: "15px" }}>{user.registered_date || "N/A"}</td>
-                        
-                        <td style={{ padding: "15px" }}>
-                           {editUserId === user.id ? (
-                             <>
-                               <button className="action-btn save" onClick={handleSaveEdit}>Save</button>
-                               <button className="action-btn cancel" onClick={() => setEditUserId(null)}>Cancel</button>
-                             </>
-                           ) : (
-                             <>
-                               <button className="action-btn edit" onClick={() => handleEditClick(user)}>Edit</button>
-                               <button className="action-btn delete" onClick={() => handleDeleteUser(user.id)}>Delete</button>
-                             </>
-                           )}
-                        </td>
+                <>
+                  <table style={{ width: "100%", marginTop: "10px", borderCollapse: "collapse" }}>
+                    <thead>
+                      <tr style={{ textAlign: "left", color: "#8e44ad", fontSize: '0.95rem' }}>
+                        <th style={{ padding: "15px", borderBottom: "2px solid #eee" }}>S.N.</th>
+                        <th style={{ padding: "15px", borderBottom: "2px solid #eee" }}>Username</th>
+                        <th style={{ padding: "15px", borderBottom: "2px solid #eee" }}>Email Address</th>
+                        <th style={{ padding: "15px", borderBottom: "2px solid #eee" }}>Role</th>
+                        <th style={{ padding: "15px", borderBottom: "2px solid #eee" }}>Registered Date</th>
+                        <th style={{ padding: "15px", borderBottom: "2px solid #eee" }}>Actions</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {paginatedUsers.map((user, index) => (
+                        <tr key={user.id || index} className="table-row">
+                          <td style={{ padding: "15px" }}>{(userCurrentPage - 1) * USERS_PER_PAGE + index + 1}</td>
+                          
+                          <td style={{ padding: "15px", fontWeight: "600" }}>
+                            {editUserId === user.id ? (
+                              <input 
+                                value={editFormData.username} 
+                                onChange={(e) => setEditFormData({...editFormData, username: e.target.value})}
+                                className="edit-input"
+                              />
+                            ) : user.username}
+                          </td>
+                          <td style={{ padding: "15px", color: "#555" }}>
+                             {editUserId === user.id ? (
+                              <input 
+                                value={editFormData.email} 
+                                onChange={(e) => setEditFormData({...editFormData, email: e.target.value})}
+                                className="edit-input"
+                              />
+                            ) : user.email}
+                          </td>
+                          <td style={{ padding: "15px" }}>
+                              <span className={user.is_admin === 1 ? "role-badge admin" : "role-badge user"}>
+                                  {user.is_admin === 1 ? "Admin" : "User"}
+                              </span>
+                          </td>
+                          <td style={{ padding: "15px" }}>{user.registered_date || "N/A"}</td>
+                          
+                          <td style={{ padding: "15px" }}>
+                             {editUserId === user.id ? (
+                               <>
+                                 <button className="action-btn save" onClick={handleSaveEdit}>Save</button>
+                                 <button className="action-btn cancel" onClick={() => setEditUserId(null)}>Cancel</button>
+                               </>
+                             ) : (
+                               <>
+                                 <button className="action-btn edit" onClick={() => handleEditClick(user)}>Edit</button>
+                                 <button className="action-btn delete" onClick={() => handleDeleteUser(user.id)}>Delete</button>
+                               </>
+                             )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {/* Users Pagination */}
+                  {renderPagination(userCurrentPage, userTotalPages, setUserCurrentPage)}
+                </>
               )}
             </div>
           </div>
         )}
-
         {/* MUSIC MANAGEMENT TAB */}
         {activeTab === "music" && (
             <div className="admin-dashboard-layout">
                 
-                {/* Controls for Songs */}
-                <div className="table-controls-bar">
+                {/* Controls for Songs - search + mood filter dropdown + add button */}
+                <div className="table-controls-bar" style={{flexWrap: 'wrap', gap: '12px'}}>
                     <div className="search-wrapper">
                         <input 
                             type="text" 
@@ -518,6 +577,33 @@ export default function AdminDashboard() {
                             className="admin-search-input"
                         />
                     </div>
+                    {/* Mood Filter Dropdown */}
+                    <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+                        <label style={{fontWeight: '600', color: '#555', fontSize: '0.9rem', whiteSpace: 'nowrap'}}>Filter by Mood:</label>
+                        <select
+                            value={songMoodFilter}
+                            onChange={(e) => setSongMoodFilter(e.target.value)}
+                            style={{
+                                padding: '10px 18px',
+                                borderRadius: '30px',
+                                border: '1.5px solid #ddd',
+                                outline: 'none',
+                                background: '#fff',
+                                fontSize: '0.9rem',
+                                fontWeight: '600',
+                                color: '#333',
+                                cursor: 'pointer',
+                                minWidth: '140px',
+                                boxShadow: '0 2px 5px rgba(0,0,0,0.04)',
+                                transition: '0.2s'
+                            }}
+                        >
+                            <option value="All">All Moods</option>
+                            {emotionOptions.map(emo => (
+                                <option key={emo} value={emo}>{emo}</option>
+                            ))}
+                        </select>
+                    </div>
                     <button 
                         className="music-main-btn add-user-btn" 
                         onClick={() => setShowAddSong(!showAddSong)}
@@ -525,7 +611,6 @@ export default function AdminDashboard() {
                         {showAddSong ? "✕ Cancel" : "+ Add New Song"}
                     </button>
                 </div>
-
                 {/* Add Song Form */}
                 {showAddSong && (
                     <div className="music-card full-width-card slide-down" style={{marginBottom: "30px", textAlign: "left", background: "#fdfdfd", border: "1px solid #eee"}}>
@@ -567,64 +652,72 @@ export default function AdminDashboard() {
                         </form>
                     </div>
                 )}
-
                 {/* Songs List Table */}
                 <div className="music-card full-width-card" style={{ textAlign: "left", cursor: "default", overflowX: "auto" }}>
-                  <h3 style={{ borderBottom: "2px solid #f0f0f0", paddingBottom: "15px" }}>Music Library</h3>
+                  <h3 style={{ borderBottom: "2px solid #f0f0f0", paddingBottom: "15px" }}>
+                    Music Library
+                    {filteredSongs.length > 0 && (
+                      <span style={{ fontSize: '0.85rem', fontWeight: '400', color: '#aaa', marginLeft: '10px' }}>
+                        ({filteredSongs.length} songs{songMoodFilter !== "All" ? ` · ${songMoodFilter}` : ""} — showing {((songCurrentPage - 1) * SONGS_PER_PAGE) + 1}–{Math.min(songCurrentPage * SONGS_PER_PAGE, filteredSongs.length)})
+                      </span>
+                    )}
+                  </h3>
                   
                   {loading ? (
                     <div style={{textAlign: 'center', padding: '40px', color: '#666'}}>Loading music...</div>
                   ) : filteredSongs.length === 0 ? (
                     <div style={{ padding: "50px", textAlign: "center", color: "#888" }}>
-                      <p>No songs found.</p>
+                      <p>No songs found{songMoodFilter !== "All" ? ` for mood: ${songMoodFilter}` : ""}.</p>
                     </div>
                   ) : (
-                    <table style={{ width: "100%", marginTop: "10px", borderCollapse: "collapse" }}>
-                      <thead>
-                        <tr style={{ textAlign: "left", color: "#8e44ad", fontSize: '0.95rem' }}>
-                          <th style={{ padding: "15px", borderBottom: "2px solid #eee" }}>S.N.</th>
-                          <th style={{ padding: "15px", borderBottom: "2px solid #eee" }}>Title</th>
-                          <th style={{ padding: "15px", borderBottom: "2px solid #eee" }}>Artist</th>
-                          <th style={{ padding: "15px", borderBottom: "2px solid #eee" }}>Category</th>
-                          <th style={{ padding: "15px", borderBottom: "2px solid #eee" }}>Language</th>
-                          <th style={{ padding: "15px", borderBottom: "2px solid #eee" }}>File</th>
-                          <th style={{ padding: "15px", borderBottom: "2px solid #eee" }}>Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredSongs.map((song, index) => (
-                          <tr key={song.id} className="table-row">
-                            <td style={{ padding: "15px" }}>{index + 1}</td>
-                            <td style={{ padding: "15px", fontWeight: "600" }}>{song.title}</td>
-                            <td style={{ padding: "15px" }}>{song.artist}</td>
-                            <td style={{ padding: "15px" }}>
-                                <span className="mood-badge" style={{backgroundColor: '#e8daef', color: '#8e44ad', border: 'none'}}>
-                                    {song.mood}
-                                </span>
-                            </td>
-                            <td style={{ padding: "15px" }}>{song.language}</td>
-                            <td style={{ padding: "15px" }}>
-                                <audio controls src={`http://127.0.0.1:5000/songs/${song.file_path}`} style={{height: '30px', width: '200px'}} />
-                            </td>
-                            <td style={{ padding: "15px" }}>
-                               <button className="action-btn delete" onClick={() => handleDeleteSong(song.id)}>Delete</button>
-                            </td>
+                    <>
+                      <table style={{ width: "100%", marginTop: "10px", borderCollapse: "collapse" }}>
+                        <thead>
+                          <tr style={{ textAlign: "left", color: "#8e44ad", fontSize: '0.95rem' }}>
+                            <th style={{ padding: "15px", borderBottom: "2px solid #eee" }}>S.N.</th>
+                            <th style={{ padding: "15px", borderBottom: "2px solid #eee" }}>Title</th>
+                            <th style={{ padding: "15px", borderBottom: "2px solid #eee" }}>Artist</th>
+                            <th style={{ padding: "15px", borderBottom: "2px solid #eee" }}>Category</th>
+                            <th style={{ padding: "15px", borderBottom: "2px solid #eee" }}>Language</th>
+                            <th style={{ padding: "15px", borderBottom: "2px solid #eee" }}>File</th>
+                            <th style={{ padding: "15px", borderBottom: "2px solid #eee" }}>Actions</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {paginatedSongs.map((song, index) => (
+                            <tr key={song.id} className="table-row">
+                              <td style={{ padding: "15px" }}>{(songCurrentPage - 1) * SONGS_PER_PAGE + index + 1}</td>
+                              <td style={{ padding: "15px", fontWeight: "600" }}>{song.title}</td>
+                              <td style={{ padding: "15px" }}>{song.artist}</td>
+                              <td style={{ padding: "15px" }}>
+                                  <span className="mood-badge" style={{backgroundColor: '#e8daef', color: '#8e44ad', border: 'none'}}>
+                                      {song.mood}
+                                  </span>
+                              </td>
+                              <td style={{ padding: "15px" }}>{song.language}</td>
+                              <td style={{ padding: "15px" }}>
+                                  <audio controls src={`http://127.0.0.1:5000/songs/${song.file_path}`} style={{height: '30px', width: '200px'}} />
+                              </td>
+                              <td style={{ padding: "15px" }}>
+                                 <button className="action-btn delete" onClick={() => handleDeleteSong(song.id)}>Delete</button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      {/* Songs Pagination */}
+                      {renderPagination(songCurrentPage, songTotalPages, setSongCurrentPage)}
+                    </>
                   )}
                 </div>
-
             </div>
         )}
-
         {/* EMOTION ANALYTICS TAB */}
         {activeTab === "emotions" && (
             <div className="admin-dashboard-layout">
                 {/* Global Date Filter Section (Reused for Emotions) */}
                 <div className="music-card full-width-card filter-card-row">
-                    <span className="filter-label">📅 Filter Records by Date:</span>
+                    <span className="filter-label">Filter Records by Date:</span>
                     <div className="date-inputs-wrapper">
                         <div className="input-wrap">
                             <label>From:</label>
@@ -639,7 +732,6 @@ export default function AdminDashboard() {
                         )}
                     </div>
                 </div>
-
                 <div className="music-card full-width-card" style={{ textAlign: "left", animation: "fadeIn 0.5s ease" }}>
                     <h3 style={{ borderBottom: "2px solid #f0f0f0", paddingBottom: "15px" }}>Global Emotion Detection Analytics</h3>
                     <p style={{color: '#666', marginBottom: '30px'}}>Aggregate frequency of all detected moods across the platform.</p>
@@ -673,7 +765,6 @@ export default function AdminDashboard() {
                 </div>
             </div>
         )}
-
       </div>
     </div>
   );
