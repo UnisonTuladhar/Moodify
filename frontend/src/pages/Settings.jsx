@@ -103,6 +103,8 @@ export default function Settings() {
             <div className="profile-dropdown">
                <p onClick={() => navigate(homeLink)}>Home</p>
                <p onClick={() => navigate(dashboardLink)}>Dashboard</p>
+                <p onClick={() => navigate("/detect-mood")}>Mood Detection</p>
+                <p onClick={() => navigate("/playlists")}>Playlists</p>
                <p onClick={handleLogout} className="dropdown-logout">Logout</p>
             </div>
           )}
