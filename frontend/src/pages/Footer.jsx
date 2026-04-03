@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../styles/Footer.css'; 
-import moodifyLogo from "../images/Moodify logo.png";
+import moodifyLogo from "../images/footer moodify.png";
 
 const Footer = () => {
   const navigate = useNavigate();
@@ -37,6 +37,8 @@ const Footer = () => {
               <li onClick={() => navigate("/about")}>About</li>
               <li onClick={() => navigate("/settings")}>Profile</li>
               <li onClick={() => navigate("/dashboard")}>Dashboard</li>
+              <li onClick={() => navigate("/detect-mood")}>Detect-Mood</li>
+              <li onClick={() => navigate("/playlists")}>Playlists</li>
               <li onClick={handleLogout} >Logout</li>
             </ul>
           </div>
