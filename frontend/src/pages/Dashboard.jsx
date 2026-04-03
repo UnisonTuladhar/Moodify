@@ -228,6 +228,8 @@ export default function Dashboard() {
             <div className="profile-dropdown">
                 <p onClick={() => navigate("/home")}>Home</p>
                 <p onClick={() => navigate("/settings")}>Settings</p>
+                <p onClick={() => navigate("/detect-mood")}>Mood Detection</p>
+                <p onClick={() => navigate("/playlists")}>Playlists</p>
                 <p onClick={handleLogout} className="dropdown-logout">Logout</p>
             </div>
             )}
@@ -235,8 +237,7 @@ export default function Dashboard() {
       </nav>
 
       <div className="dashboard-back-container">
-         <button className="back-link-btn" onClick={() => navigate("/home")}>
- Back to Home</button>
+         <button className="back-link-btn" onClick={() => navigate("/home")}>Back to Home</button>
       </div>
 
       <div className="dashboard-content">
@@ -250,16 +251,11 @@ export default function Dashboard() {
             <button className={`tab-btn ${activeTab === 'mood' ? 'active' : ''}`} onClick={() => setActiveTab('mood')}>
                 Mood Detection History
             </button>
-            <button className={`tab-btn ${activeTab === 'liked' ? 'active' : ''}`} onClick={() => setActiveTab('liked')}>
-                
- Liked Songs
-            </button>
+            <button className={`tab-btn ${activeTab === 'liked' ? 'active' : ''}`} onClick={() => setActiveTab('liked')}> Liked Songs </button>
         </div>
 
         <div className="dashboard-panel">
-            {/* 
- MOOD HISTORY TAB 
- */}
+            {/* MOOD HISTORY TAB */}
             {activeTab === 'mood' && (
                 <div className="mood-analytics-container">
                     {/* Filters */}
