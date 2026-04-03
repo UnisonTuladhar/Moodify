@@ -44,6 +44,8 @@ export default function Home() {
             {showDropdown && (
               <div className="profile-dropdown">
                 <p onClick={() => navigate("/dashboard")}>Dashboard</p>
+                <p onClick={() => navigate("/detect-mood")}>Mood Detection</p>
+                <p onClick={() => navigate("/playlists")}>Playlists</p>
                 <p onClick={() => navigate("/settings")}>Settings</p>
                 <p onClick={handleLogout} className="dropdown-logout">Logout</p>
               </div>
@@ -57,7 +59,6 @@ export default function Home() {
           <div className="scan-corner scan-bl"></div>
           <div className="scan-corner scan-br"></div>
         </div>
-
         <div className="hero-content">
           <div className="hero-badge">AI Powered Emotion Recognition</div>
           <h1 className="hero-title">
@@ -67,10 +68,15 @@ export default function Home() {
             Experience music that resonates with your soul. Our AI detects your facial 
             expressions to curate the perfect playlist for your current mood.
           </p>
-          <div style={{ marginTop: "38px" }}>
+          <div style={{ marginTop: "38px", display: "flex", gap: "16px", flexWrap: "wrap", alignItems: "center" }}>
             <button 
               className="hero-cta-btn" 
               onClick={() => navigate("/detect-mood")}>Detect My Mood
+            </button>
+            <button
+              className="hero-manual-btn"
+              onClick={() => navigate("/user-manual")}>
+              Learn How to Use Moodify
             </button>
           </div>
         </div>
@@ -83,27 +89,32 @@ export default function Home() {
           <div className="features-grid">
             {/* Clicking any of the 3 cards navigates to the About Us page */}
             <div className="feat-card feat-card--clickable" onClick={() => navigate("/about")} style={{cursor: "pointer"}}>
-              <div className="feat-icon">📷</div>
+              <div className="feat-icon">
+</div>
               <h3>Facial Analysis</h3>
               <p>We use advanced Computer Vision to analyze facial landmarks in real-time.</p>
-              <span className="feat-learn-more">Learn more →</span>
+              <span className="feat-learn-more">Learn more 
+</span>
             </div>
             <div className="feat-card feat-card--clickable" onClick={() => navigate("/about")} style={{cursor: "pointer"}}>
-              <div className="feat-icon">🧠</div>
+              <div className="feat-icon">
+</div>
               <h3>AI Detection</h3>
               <p>Our trained neural network identifies emotions like Happy, Sad, Angry, Neutral and Surprised.</p>
-              <span className="feat-learn-more">Learn more →</span>
+              <span className="feat-learn-more">Learn more 
+</span>
             </div>
             <div className="feat-card feat-card--clickable" onClick={() => navigate("/about")} style={{cursor: "pointer"}}>
-              <div className="feat-icon">🎵</div>
+              <div className="feat-icon">
+</div>
               <h3>Smart Playlists</h3>
               <p>Instantly receive music recommendations that match or enhance your current mood.</p>
-              <span className="feat-learn-more">Learn more →</span>
+              <span className="feat-learn-more">Learn more 
+</span>
             </div>
           </div>
         </section>
         <div className="section-divider"></div>
-
         {/* MOOD PREVIEW GALLERY */}
         <section className="mood-gallery">
           <h2 className="section-title">Explore Your Emotions</h2>
@@ -116,7 +127,6 @@ export default function Home() {
             <div className="mood-tile surprise" onClick={() => handleMoodTileClick("Surprise")}> Surprise</div>
           </div>
         </section>
-
         {/* ACTION BANNER */}
         <section className="cta-banner">
           <div className="cta-content">

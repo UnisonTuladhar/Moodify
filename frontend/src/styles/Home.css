@@ -351,3 +351,52 @@
     opacity: 1;
     transform: translateY(0);
 }
+
+hero-manual-btn {
+  display: inline-block;
+  padding: 17px 36px;
+  border-radius: 35px;
+  border: 2px solid transparent;
+  background: transparent;
+  /* outlined gradient border trick */
+  background-clip: padding-box;
+  box-shadow: 0 0 0 2px #ff4e00;
+  color: #ff4e00;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+.hero-manual-btn:hover {
+  background: linear-gradient(90deg, #ff4e00, #ec008c);
+  box-shadow: 0 8px 28px rgba(255, 78, 0, 0.3);
+  color: #ffffff;
+  transform: translateY(-3px);
+}
+
+.hero-manual-btn {
+  display: inline-block;
+  padding: 17px 36px;
+  border-radius: 35px;
+  border: 2px solid #ff4e00;
+  background: transparent;
+  color: #ff4e00;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+.hero-manual-btn:hover {
+  background: linear-gradient(90deg, #ff4e00, #ec008c);
+  border-color: transparent;
+  color: #ffffff;
+  transform: translateY(-3px);
+  box-shadow: 0 8px 28px rgba(255, 78, 0, 0.3);
+}
+
