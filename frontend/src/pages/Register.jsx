@@ -2,6 +2,7 @@ import { useState } from "react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom"; 
 import "../styles/Register.css";
+import MoodifyLogo from "../images/Moodify-logo.png"; 
 
 export default function Register() {
   const [step, setStep] = useState(1); 
@@ -9,26 +10,26 @@ export default function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState(""); 
-  
   const [otp, setOtp] = useState(new Array(6).fill(""));
-  
   const [error, setError] = useState(""); 
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate(); 
-
   const requestOtp = async () => {
     setError(""); 
-
     if(!username || !email || !password || !confirmPassword) {
       setError("Please fill all fields");
       return;
     }
-
     if(password !== confirmPassword) {
       setError("Passwords do not match");
       return;
     }
-
+    // Validate email format before calling backend
+    const emailRegex = /^[\w.-]+@[\w.-]+\.\w+$/;
+    if (!emailRegex.test(email)) {
+      setError("Please enter a valid email address (e.g. name@gmail.com)");
+      return;
+    }
     setIsLoading(true);
     try {
       const res = await axios.post("http://127.0.0.1:5000/register-step1", { username, email, password });
@@ -40,17 +41,13 @@ export default function Register() {
       setIsLoading(false);
     }
   };
-
   const handleOtpChange = (element, index) => {
     if (isNaN(element.value)) return false;
-
     setOtp([...otp.map((d, idx) => (idx === index ? element.value : d))]);
-
     if (element.nextSibling) {
       element.nextSibling.focus();
     }
   };
-
   const handleKeyDown = (e, index) => {
       if (e.key === "Backspace") {
           if (e.target.previousSibling && otp[index] === "") {
@@ -58,16 +55,13 @@ export default function Register() {
           }
       }
   };
-
   const verifyAndRegister = async () => {
     setError("");
     const finalOtp = otp.join("");
-
     if(finalOtp.length < 6) {
       setError("Please enter the 6-digit code");
       return;
     }
-
     setIsLoading(true);
     try {
       await axios.post("http://127.0.0.1:5000/verify-registration", { email, otp: finalOtp });
@@ -78,7 +72,6 @@ export default function Register() {
       setIsLoading(false);
     }
   };
-
   return (
     <div className="music-container">
       <div 
@@ -92,13 +85,11 @@ export default function Register() {
           </div>
         </div>
       </div>
-
       <div className="music-right">
         <div className="music-top-nav">
-           <div className="music-logo">Moodify</div>
+           <img src={MoodifyLogo} alt="Moodify" className="music-logo-img" />
            <Link to="/login" className="music-signup-btn">Sign In</Link>
         </div>
-
         <div className="music-form-box">
           <h2>{step === 1 ? "Sign Up" : "Verification"}</h2>
           
@@ -119,7 +110,11 @@ export default function Register() {
               
               {/* Error Message */}
               {error && <p style={{color: '#e74c3c', fontSize: '0.9rem', marginBottom: '15px', fontWeight: '600'}}>{error}</p>}
-
+              {/* Guide link — shown just above the register button */}
+              <div className="music-guide-link-row">
+                <span className="music-guide-hint">Difficulty in registration?</span>
+                <Link to="/user-manual" className="music-guide-link">Read the guide</Link>
+              </div>
               <button className="music-main-btn" onClick={requestOtp} disabled={isLoading}>
                 {isLoading ? "Sending..." : "Register Now"}
               </button>
@@ -143,10 +138,9 @@ export default function Register() {
                   />
                 ))}
               </div>
-
+              
               {/* Error Message for OTP */}
               {error && <p style={{color: '#e74c3c', fontSize: '0.9rem', marginBottom: '15px', fontWeight: '600', textAlign: 'center'}}>{error}</p>}
-
               <button className="music-main-btn" onClick={verifyAndRegister} disabled={isLoading}>
                 {isLoading ? "Verifying..." : "Verify Account"}
               </button>

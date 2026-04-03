@@ -6,7 +6,6 @@
     overflow: hidden;
     margin: 0;
 }
-
 .music-left {
     flex: 1;
     background-size: cover;
@@ -15,7 +14,6 @@
     display: flex;
     flex-direction: column;
 }
-
 .music-overlay {
     background: linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0) 50%);
     height: 100%;
@@ -23,10 +21,8 @@
     padding: 60px;
     box-sizing: border-box;
 }
-
 .music-tagline { font-size: 0.9rem; color: white; opacity: 0.8; margin-bottom: 10px; }
 .music-left h1 { font-size: 3.5rem; line-height: 1.1; margin: 0; color: white; font-weight: 700; }
-
 .music-right {
     flex: 1.2;
     background-color: #ffffff;
@@ -39,14 +35,20 @@
     z-index: 2; 
     box-shadow: -10px 0 30px rgba(0,0,0,0.2);
 }
-
 .music-top-nav { display: flex; justify-content: space-between; align-items: center; }
 .music-logo { font-weight: bold; font-size: 1.5rem; color: #1a1614; }
-.music-signup-btn { color: #1a1614; text-decoration: none; font-weight: 600; border: 1px solid #ccc; padding: 8px 20px; border-radius: 20px; }
 
+/* Moodify logo image */
+.music-logo-img {
+  height: 110px;
+  width: auto;
+  object-fit: contain;
+  filter: none;
+}
+
+.music-signup-btn { color: #1a1614; text-decoration: none; font-weight: 600; border: 1px solid #ccc; padding: 8px 20px; border-radius: 20px; }
 .music-form-box { margin: auto; width: 100%; max-width: 400px; }
 .music-form-box h2 { font-size: 2.2rem; margin-bottom: 30px; color: #1a1614; }
-
 .music-input-group { margin-bottom: 15px; }
 .music-input-group input {
     width: 100%;
@@ -55,15 +57,14 @@
     border: 1px solid #ddd;
     font-size: 1rem;
     outline: none;
+    box-sizing: border-box;
 }
-
 .otp-container {
     display: flex;
     justify-content: space-between;
     gap: 10px;
     margin-bottom: 20px;
 }
-
 .otp-input {
     width: 100%;
     height: 50px;
@@ -74,16 +75,13 @@
     background: #f9f9f9;
     outline: none;
 }
-
 .otp-input:focus {
     border-color: #ff4e00;
     background: #fff;
     box-shadow: 0 0 5px rgba(255, 78, 0, 0.2);
 }
-
 .music-links-row { margin: 10px 0 25px 15px; }
 .music-links-row a { color: #ff4e00; text-decoration: none; font-weight: 600; font-size: 0.9rem; }
-
 .music-main-btn {
     width: 100%;
     padding: 16px;
@@ -95,5 +93,34 @@
     font-size: 1rem;
     cursor: pointer;
 }
-
 .music-footer { position: absolute; bottom: 30px; left: 50px; font-size: 0.8rem; color: #999; }
+.music-logo {
+  font-weight: bold;
+  font-size: 1.5rem;
+  color: #1a1614;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', sans-serif;
+}
+/* Guide link row */
+.music-guide-link-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 14px;
+  margin-top: 2px;
+}
+.music-guide-hint {
+  font-size: 0.83rem;
+  color: #999;
+  font-weight: 500;
+}
+.music-guide-link {
+  font-size: 0.83rem;
+  font-weight: 700;
+  color: #ff4e00;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+.music-guide-link:hover {
+  color: #ec008c;
+  text-decoration: underline;
+}

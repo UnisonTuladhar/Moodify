@@ -2,6 +2,7 @@ import { useState } from "react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom"; 
 import "../styles/ForgotPassword.css";
+import MoodifyLogo from "../images/Moodify-logo.png"; 
 
 export default function ForgotPassword() {
   const [step, setStep] = useState(1); 
@@ -9,14 +10,11 @@ export default function ForgotPassword() {
   const [otp, setOtp] = useState(new Array(6).fill(""));
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  
   // State for loading and error messages
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(""); 
-  
   const navigate = useNavigate(); 
-
-  // Send OTP LOgic 
+  // Send OTP Logic 
   const sendOtp = async () => {
     setError(""); 
     const cleanEmail = email.trim();
@@ -24,7 +22,6 @@ export default function ForgotPassword() {
         setError("Please enter an email address");
         return;
     }
-
     setIsLoading(true);
     try {
       const res = await axios.post("http://127.0.0.1:5000/forgot-password", { email: cleanEmail });
@@ -38,18 +35,14 @@ export default function ForgotPassword() {
         setIsLoading(false);
     }
   };
-
   // OTP Input Logic
   const handleOtpChange = (element, index) => {
     if (isNaN(element.value)) return false;
-
     setOtp([...otp.map((d, idx) => (idx === index ? element.value : d))]);
-
     if (element.nextSibling) {
       element.nextSibling.focus();
     }
   };
-
   const handleKeyDown = (e, index) => {
       if (e.key === "Backspace") {
           if (e.target.previousSibling && otp[index] === "") {
@@ -57,7 +50,6 @@ export default function ForgotPassword() {
           }
       }
   };
-
   // Verify OTP
   const verifyOtp = async () => {
       setError("");
@@ -68,7 +60,6 @@ export default function ForgotPassword() {
           setError("Please enter the 6-digit code.");
           return;
       }
-
       setIsLoading(true);
       try {
           const res = await axios.post("http://127.0.0.1:5000/verify-forgot-otp", { email: cleanEmail, otp: finalOtp });
@@ -82,11 +73,9 @@ export default function ForgotPassword() {
           setIsLoading(false);
       }
   };
-
   // Update Password
   const resetPassword = async () => {
     setError(""); 
-
     if(!newPassword || !confirmPassword) {
         setError("Please fill all fields");
         return;
@@ -97,7 +86,6 @@ export default function ForgotPassword() {
         setError("Passwords do not match!");
         return;
     }
-
     const cleanEmail = email.trim();
     
     setIsLoading(true);
@@ -115,7 +103,6 @@ export default function ForgotPassword() {
         setIsLoading(false);
     }
   };
-
   return (
     <div className="music-container">
       <div 
@@ -128,13 +115,11 @@ export default function ForgotPassword() {
           </div>
         </div>
       </div>
-
       <div className="music-right">
         <div className="music-top-nav">
-           <div className="music-logo">Moodify</div>
+           <img src={MoodifyLogo} alt="Moodify" className="music-logo-img" />
            <Link to="/login" className="music-signup-btn">Sign In</Link>
         </div>
-
         <div className="music-form-box">
           
           {step === 1 && (
@@ -155,7 +140,6 @@ export default function ForgotPassword() {
               </button>
             </>
           )}
-
           {step === 2 && (
             <>
               <h2>Verification</h2>
@@ -175,16 +159,13 @@ export default function ForgotPassword() {
                   />
                 ))}
               </div>
-
               {error && <p style={{color: '#e74c3c', fontSize: '0.9rem', marginBottom: '15px', textAlign: 'center'}}>{error}</p>}
-
               <button className="music-main-btn" onClick={verifyOtp} disabled={isLoading}>
                 {isLoading ? "Verifying..." : "Verify OTP"}
               </button>
               <p className="music-back-link" onClick={() => { setStep(1); setError(""); }} style={{marginTop: '15px', cursor: 'pointer', textAlign: 'center'}}>Go back</p>
             </>
           )}
-
           {step === 3 && (
             <>
               <h2>Create New Password</h2>
@@ -204,7 +185,6 @@ export default function ForgotPassword() {
                     onFocus={() => setError("")}
                 />
               </div>
-
               {/* Error Message Display */}
               {error && (
                 <p style={{
@@ -217,13 +197,11 @@ export default function ForgotPassword() {
                     {error}
                 </p>
               )}
-
               <button className="music-main-btn" onClick={resetPassword} disabled={isLoading}>
                 {isLoading ? "Updating..." : "Update Password"}
               </button>
             </>
           )}
-
         </div>
         <p className="music-footer">© 2025 Moodify Inc. | Contact Us</p>
       </div>

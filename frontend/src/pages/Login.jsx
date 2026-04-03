@@ -2,6 +2,7 @@ import { useState } from "react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom"; 
 import "../styles/Login.css";
+import MoodifyLogo from "../images/Moodify-logo.png"; 
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -9,7 +10,6 @@ export default function Login() {
   const [error, setError] = useState(""); 
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate(); 
-
   const submit = async () => {
     setError(""); 
     
@@ -17,7 +17,6 @@ export default function Login() {
       setError("Please fill in all fields.");
       return;
     }
-
     setIsLoading(true);
     try {
       const res = await axios.post("http://127.0.0.1:5000/login", { email, password });
@@ -38,19 +37,17 @@ export default function Login() {
       setIsLoading(false);
     }
   };
-
   return (
     <div className="music-container">
-      {/* ackground Image */}
+      {/* Background Image */}
       <div 
       className="music-left" 
       style={{ 
         backgroundImage: `url(${require("../images/Login.jpg")})` 
-      }}
->
+      }}>
         <div className="music-overlay">
           <div className="music-left-content">
-            <p className="music-tagline">Music for every mood – global solutions for your vibes.</p>
+            <p className="music-tagline">Music for every mood — global solutions for your vibes.</p>
             <h1>Manage <br/> your moods</h1>
           </div>
         </div>
@@ -59,10 +56,9 @@ export default function Login() {
       {/* Login Form */}
       <div className="music-right">
         <div className="music-top-nav">
-           <div className="music-logo">Moodify</div>
+           <img src={MoodifyLogo} alt="Moodify" className="music-logo-img" />
            <Link to="/register" className="music-signup-btn">Sign Up</Link>
         </div>
-
         <div className="music-form-box">
           <h2>Sign In</h2>
           <div className="music-input-group">
@@ -84,7 +80,6 @@ export default function Login() {
           <div className="music-links-row">
             <Link to="/forgot-password">Forgot password?</Link>
           </div>
-
           {/* Error Message Display */}
           {error && (
             <p style={{
@@ -96,7 +91,11 @@ export default function Login() {
               {error}
             </p>
           )}
-
+          
+          <div className="music-guide-link-row">
+            <span className="music-guide-hint">Difficulty in login?</span>
+            <Link to="/user-manual" className="music-guide-link">Read the guide</Link>
+          </div>
           <button className="music-main-btn" onClick={submit} disabled={isLoading}>
             {isLoading ? "Signing In..." : "Sign In"}
           </button>
