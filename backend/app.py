@@ -127,7 +127,7 @@ def get_mood():
     global last_predicted_mood
     return jsonify({"mood": last_predicted_mood}), 200
 
-# Sets the ddetection to true to open the camera and start the detection 
+# Sets the detection to true to open the camera and start the detection 
 @app.route('/start_detection', methods=['POST'])
 def start_detection():
     global detection_active, last_predicted_mood
@@ -382,7 +382,7 @@ def get_playlist_by_mood():
     cursor = db.cursor(dictionary=True)
     local_songs = []
     try:
-        query = "SELECT * FROM songs WHERE mood=%s ORDER BY RAND() LIMIT 5"
+        query = "SELECT * FROM songs WHERE mood=%s ORDER BY RAND() LIMIT 20"
         cursor.execute(query, (mood,))
 
         db_results = cursor.fetchall()
@@ -427,6 +427,12 @@ def register_step1():
     password = hash_password(data["password"])
     otp = generate_otp()
 
+    # Validate email format before attempting to send OTP
+    import re
+    if not re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', email):
+        return jsonify({"error": "Please enter a valid email address (e.g. name@gmail.com)"}), 400
+    
+
     db = get_db_connection()
     cursor = db.cursor()
 
@@ -445,7 +451,7 @@ def register_step1():
                            (username, email, password, otp))
         
         db.commit()
-        msg = Message('Moodify Verification Code', sender='tuladharunison@gmail.com', recipients=[email])
+        msg = Message('Moodify Verification Code', sender=('Moodify', 'tuladharunison@gmail.com'), recipients=[email])
         msg.body = f"Your verification code is: {otp}"
         mail.send(msg)
         return jsonify({"message": "OTP sent to your email!"}), 200
@@ -631,7 +637,7 @@ def forgot_password():
             cursor.execute("UPDATE users SET otp=%s WHERE email=%s", (otp, email))
             db.commit()
 
-            msg = Message('Moodify Password Reset Code', sender='tuladharunison@gmail.com', recipients=[email])
+            msg = Message('Moodify Password Reset Code', sender=('Moodify', 'tuladharunison@gmail.com'), recipients=[email])
             msg.body = f"Your password reset code is: {otp}"
             mail.send(msg)
             return jsonify({"message": "OTP sent to your email"}), 200
@@ -826,6 +832,243 @@ def get_liked_song_ids():
         )
         ids = cursor.fetchall()
         return jsonify([row["song_id"] for row in ids]), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        db.close()
+
+# Create a new playlist 
+@app.post("/user/create-playlist")
+def create_playlist():
+    data = request.json
+    email = data.get("email")
+    name = data.get("name")
+    image = data.get("image", None)  
+
+    if not email or not name:
+        return jsonify({"error": "Missing required fields"}), 400
+
+    db = get_db_connection()
+    cursor = db.cursor()
+    try:
+        cursor.execute(
+            "INSERT INTO playlists (email, name, image) VALUES (%s, %s, %s)",
+            (email, name, image)
+        )
+        db.commit()
+        return jsonify({"message": "Playlist created", "id": cursor.lastrowid}), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        db.close()
+
+# Get all playlists for a user
+@app.post("/user/get-playlists")
+def get_user_playlists():
+    data = request.json
+    email = data.get("email")
+
+    if not email:
+        return jsonify({"error": "Email is required"}), 400
+
+    db = get_db_connection()
+    cursor = db.cursor(dictionary=True)
+    try:
+        cursor.execute(
+            "SELECT * FROM playlists WHERE email=%s ORDER BY created_at DESC",
+            (email,)
+        )
+        playlists = cursor.fetchall()
+        return jsonify(playlists), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        db.close()
+
+# Update playlist name and/or cover image
+@app.post("/user/update-playlist")
+def update_playlist():
+    data = request.json
+    playlist_id = data.get("playlist_id")
+    name = data.get("name")
+    image = data.get("image", None)  
+
+    if not playlist_id or not name:
+        return jsonify({"error": "Missing required fields"}), 400
+
+    db = get_db_connection()
+    cursor = db.cursor()
+    try:
+        cursor.execute(
+            "UPDATE playlists SET name=%s, image=%s WHERE id=%s",
+            (name, image, playlist_id)
+        )
+        db.commit()
+        return jsonify({"message": "Playlist updated"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        db.close()
+
+# Add a song to a playlist
+@app.post("/user/add-to-playlist")
+def add_to_playlist():
+    data = request.json
+    playlist_id = data.get("playlist_id")
+    song_id = data.get("song_id")
+    song_title = data.get("song_title")
+    song_artist = data.get("song_artist")
+    song_mood = data.get("song_mood")
+    song_image = data.get("song_image")
+    song_source = data.get("song_source")
+    file_path = data.get("file_path")
+
+    if not playlist_id or not song_id:
+        return jsonify({"error": "Missing required fields"}), 400
+
+    db = get_db_connection()
+    cursor = db.cursor(dictionary=True)
+    try:
+        # Check if song already in playlist
+        cursor.execute(
+            "SELECT id FROM playlist_songs WHERE playlist_id=%s AND song_id=%s",
+            (playlist_id, str(song_id))
+        )
+        existing = cursor.fetchone()
+        if existing:
+            return jsonify({"message": "Song already in playlist"}), 200
+
+        cursor.execute(
+            """INSERT INTO playlist_songs
+               (playlist_id, song_id, song_title, song_artist, song_mood, song_image, song_source, file_path)
+               VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""",
+            (playlist_id, str(song_id), song_title, song_artist, song_mood, song_image, song_source, file_path)
+        )
+        db.commit()
+        return jsonify({"message": "Song added to playlist"}), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        db.close()
+
+# Get all songs in a playlist
+@app.post("/user/playlist-songs")
+def get_playlist_songs():
+    data = request.json
+    playlist_id = data.get("playlist_id")
+
+    if not playlist_id:
+        return jsonify({"error": "Playlist ID is required"}), 400
+
+    db = get_db_connection()
+    cursor = db.cursor(dictionary=True)
+    try:
+        cursor.execute(
+            "SELECT * FROM playlist_songs WHERE playlist_id=%s ORDER BY added_at DESC",
+            (playlist_id,)
+        )
+        songs = cursor.fetchall()
+        return jsonify(songs), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        db.close()
+
+# Delete a playlist 
+@app.post("/user/delete-playlist")
+def delete_playlist():
+    data = request.json
+    playlist_id = data.get("playlist_id")
+
+    if not playlist_id:
+        return jsonify({"error": "Playlist ID is required"}), 400
+
+    db = get_db_connection()
+    cursor = db.cursor()
+    try:
+        cursor.execute("DELETE FROM playlists WHERE id=%s", (playlist_id,))
+        db.commit()
+        return jsonify({"message": "Playlist deleted"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        db.close()
+
+# Remove a song from a playlist
+@app.post("/user/remove-from-playlist")
+def remove_from_playlist():
+    data = request.json
+    playlist_song_id = data.get("playlist_song_id")
+
+    if not playlist_song_id:
+        return jsonify({"error": "playlist_song_id is required"}), 400
+
+    db = get_db_connection()
+    cursor = db.cursor()
+    try:
+        cursor.execute("DELETE FROM playlist_songs WHERE id=%s", (playlist_song_id,))
+        db.commit()
+        return jsonify({"message": "Song removed from playlist"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        db.close()
+
+# Submit Feedback (User)
+@app.post("/user/submit-feedback")
+def submit_feedback():
+    data = request.json
+    email = data.get("email", "").strip()        
+    name = data.get("name", "").strip()          # optional
+    subject = data.get("subject", "").strip()    # mandatory
+    message = data.get("message", "").strip()    # mandatory
+    if not subject:
+        return jsonify({"error": "Subject is required"}), 400
+    if not message:
+        return jsonify({"error": "Feedback message is required"}), 400
+    db = get_db_connection()
+    cursor = db.cursor()
+    try:
+        cursor.execute(
+            "INSERT INTO feedbacks (email, name, subject, message) VALUES (%s, %s, %s, %s)",
+            (email, name, subject, message)
+        )
+        db.commit()
+        return jsonify({"message": "Feedback submitted successfully!"}), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        db.close()
+
+# Get All Feedbacks (Admin)
+@app.get("/admin/feedbacks")
+def get_all_feedbacks():
+    db = get_db_connection()
+    cursor = db.cursor(dictionary=True)
+    try:
+        cursor.execute(
+            """SELECT id, email, name, subject, message,
+               DATE_FORMAT(submitted_at, '%Y-%m-%d %H:%i') as submitted_at
+               FROM feedbacks ORDER BY submitted_at DESC"""
+        )
+        feedbacks = cursor.fetchall()
+        return jsonify(feedbacks), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        db.close()
+
+# Delete a Feedback (Admin)
+@app.post("/admin/delete-feedback")
+def delete_feedback():
+    data = request.json
+    feedback_id = data.get("id")
+    db = get_db_connection()
+    cursor = db.cursor()
+    try:
+        cursor.execute("DELETE FROM feedbacks WHERE id=%s", (feedback_id,))
+        db.commit()
+        return jsonify({"message": "Feedback deleted"}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     finally:
