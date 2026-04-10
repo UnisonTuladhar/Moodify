@@ -20,6 +20,7 @@ const EMOTION_COLORS = {
 // Pagination items per page
 const USERS_PER_PAGE = 10;
 const SONGS_PER_PAGE = 10;
+const FEEDBACKS_PER_PAGE = 10;
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -31,11 +32,16 @@ export default function AdminDashboard() {
   const [songs, setSongs] = useState([]); 
   const [filteredUsers, setFilteredUsers] = useState([]); 
   const [emotionAnalyticsData, setEmotionAnalyticsData] = useState([]); 
+  const [feedbacks, setFeedbacks] = useState([]);
+  const [selectedFeedback, setSelectedFeedback] = useState(null); 
+  const [feedbackStartDate, setFeedbackStartDate] = useState("");
+  const [feedbackEndDate, setFeedbackEndDate] = useState("");
   const[loading, setLoading] = useState(true);
   // Filters
   const [searchQuery, setSearchQuery] = useState("");
   const [songSearchQuery, setSongSearchQuery] = useState(""); 
   const [songMoodFilter, setSongMoodFilter] = useState("All"); 
+  const [feedbackSearchQuery, setFeedbackSearchQuery] = useState("");
   const[startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const[chartData, setChartData] = useState([]);
@@ -51,6 +57,7 @@ export default function AdminDashboard() {
   // Pagination State
   const [userCurrentPage, setUserCurrentPage] = useState(1);
   const [songCurrentPage, setSongCurrentPage] = useState(1);
+  const [feedbackCurrentPage, setFeedbackCurrentPage] = useState(1);
 
   const emotionOptions = ['Angry', 'Happy', 'Neutral', 'Sad', 'Surprise'];
   const handleLogout = () => {
@@ -69,6 +76,8 @@ export default function AdminDashboard() {
       fetchUsers();
     } else if (activeTab === "music") {
       fetchSongs();
+    } else if (activeTab === "feedbacks") {
+      fetchFeedbacks();
     }
   }, [activeTab]);
   useEffect(() => {
@@ -91,6 +100,11 @@ export default function AdminDashboard() {
   useEffect(() => {
     setSongCurrentPage(1);
   }, [songSearchQuery, songMoodFilter]);
+
+  // Reset feedback page when search or date filters change
+  useEffect(() => {
+    setFeedbackCurrentPage(1);
+  }, [feedbackSearchQuery, feedbackStartDate, feedbackEndDate]);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -139,6 +153,34 @@ export default function AdminDashboard() {
         setEmotionAnalyticsData([]);
     } finally {
         setLoading(false);
+    }
+  };
+  // Fetch all feedbacks submitted by users
+  const fetchFeedbacks = async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get("http://127.0.0.1:5000/admin/feedbacks");
+      if (Array.isArray(res.data)) {
+        setFeedbacks(res.data);
+      } else {
+        setFeedbacks([]);
+      }
+    } catch (err) {
+      console.error("Error fetching feedbacks", err);
+      setFeedbacks([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+  // Delete a single feedback entry
+  const handleDeleteFeedback = async (id) => {
+    if (window.confirm("Are you sure you want to delete this feedback?")) {
+      try {
+        await axios.post("http://127.0.0.1:5000/admin/delete-feedback", { id });
+        fetchFeedbacks();
+      } catch (err) {
+        alert("Failed to delete feedback");
+      }
     }
   };
   const processData = () => {
@@ -243,6 +285,7 @@ export default function AdminDashboard() {
     setEditUserId(user.id);
     setEditFormData({ username: user.username, email: user.email });
   };
+  
   const handleSaveEdit = async () => {
     try {
       await axios.post("http://127.0.0.1:5000/admin/edit-user", {
@@ -253,7 +296,8 @@ export default function AdminDashboard() {
       setEditUserId(null);
       fetchUsers();
     } catch (err) {
-      alert("Failed to update user");
+      const message = err.response?.data?.error || "Failed to update user";
+      alert(message);
     }
   };
 
@@ -264,6 +308,21 @@ export default function AdminDashboard() {
       s.artist.toLowerCase().includes(songSearchQuery.toLowerCase());
     const matchesMood = songMoodFilter === "All" || s.mood === songMoodFilter;
     return matchesSearch && matchesMood;
+  });
+
+  // Filter feedbacks based on search 
+  const filteredFeedbacks = feedbacks.filter(f => {
+    const q = feedbackSearchQuery.toLowerCase();
+    const matchesSearch = (
+      (f.email && f.email.toLowerCase().includes(q)) ||
+      (f.name && f.name.toLowerCase().includes(q)) ||
+      (f.subject && f.subject.toLowerCase().includes(q))
+    );
+    // Date filter
+    const feedbackDate = f.submitted_at ? f.submitted_at.substring(0, 10) : "";
+    const matchesStart = !feedbackStartDate || feedbackDate >= feedbackStartDate;
+    const matchesEnd = !feedbackEndDate || feedbackDate <= feedbackEndDate;
+    return matchesSearch && matchesStart && matchesEnd;
   });
 
   // Users pagination
@@ -278,6 +337,13 @@ export default function AdminDashboard() {
   const paginatedSongs = filteredSongs.slice(
     (songCurrentPage - 1) * SONGS_PER_PAGE,
     songCurrentPage * SONGS_PER_PAGE
+  );
+
+  // Feedbacks pagination
+  const feedbackTotalPages = Math.ceil(filteredFeedbacks.length / FEEDBACKS_PER_PAGE);
+  const paginatedFeedbacks = filteredFeedbacks.slice(
+    (feedbackCurrentPage - 1) * FEEDBACKS_PER_PAGE,
+    feedbackCurrentPage * FEEDBACKS_PER_PAGE
   );
 
   // Render pagination controls
@@ -385,6 +451,13 @@ export default function AdminDashboard() {
                 onClick={() => setActiveTab('emotions')}
             >
                 Emotion Analytics
+            </button>
+            {/* Feedbacks tab */}
+            <button 
+                className={`tab-btn ${activeTab === 'feedbacks' ? 'active' : ''}`} 
+                onClick={() => setActiveTab('feedbacks')}
+            >
+                Feedbacks
             </button>
         </div>
         {/* USER MANAGEMENT TAB */}
@@ -539,17 +612,19 @@ export default function AdminDashboard() {
                           <td style={{ padding: "15px" }}>{user.registered_date || "N/A"}</td>
                           
                           <td style={{ padding: "15px" }}>
-                             {editUserId === user.id ? (
-                               <>
-                                 <button className="action-btn save" onClick={handleSaveEdit}>Save</button>
-                                 <button className="action-btn cancel" onClick={() => setEditUserId(null)}>Cancel</button>
-                               </>
-                             ) : (
-                               <>
-                                 <button className="action-btn edit" onClick={() => handleEditClick(user)}>Edit</button>
-                                 <button className="action-btn delete" onClick={() => handleDeleteUser(user.id)}>Delete</button>
-                               </>
-                             )}
+                              {user.is_admin === 1 ? (
+                                <span style={{ color: "#aaa", fontSize: "0.85rem", fontStyle: "italic" }}>N/A</span>
+                              ) : editUserId === user.id ? (
+                                <>
+                                  <button className="action-btn save" onClick={handleSaveEdit}>Save</button>
+                                  <button className="action-btn cancel" onClick={() => setEditUserId(null)}>Cancel</button>
+                                </>
+                              ) : (
+                                <>
+                                  <button className="action-btn edit" onClick={() => handleEditClick(user)}>Edit</button>
+                                  <button className="action-btn delete" onClick={() => handleDeleteUser(user.id)}>Delete</button>
+                                </>
+                              )}
                           </td>
                         </tr>
                       ))}
@@ -565,8 +640,6 @@ export default function AdminDashboard() {
         {/* MUSIC MANAGEMENT TAB */}
         {activeTab === "music" && (
             <div className="admin-dashboard-layout">
-                
-                {/* Controls for Songs - search + mood filter dropdown + add button */}
                 <div className="table-controls-bar" style={{flexWrap: 'wrap', gap: '12px'}}>
                     <div className="search-wrapper">
                         <input 
@@ -761,6 +834,224 @@ export default function AdminDashboard() {
                                 </BarChart>
                             </ResponsiveContainer>
                         </div>
+                    )}
+                </div>
+            </div>
+        )}
+        {/* FEEDBACKS TAB */}
+        {activeTab === "feedbacks" && (
+            <div className="admin-dashboard-layout">
+
+                {/* Feedback Detail Modal */}
+                {selectedFeedback && (
+                    <div
+                        style={{
+                            position: 'fixed', inset: 0, zIndex: 1000,
+                            background: 'rgba(0,0,0,0.45)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            padding: '20px'
+                        }}
+                        onClick={() => setSelectedFeedback(null)}
+                    >
+                        <div
+                            style={{
+                                background: '#fff', borderRadius: '18px',
+                                padding: '36px 40px', maxWidth: '580px', width: '100%',
+                                boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
+                                maxHeight: '85vh', overflowY: 'auto', position: 'relative'
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {/* Modal close button */}
+                            <button
+                                onClick={() => setSelectedFeedback(null)}
+                                style={{
+                                    position: 'absolute', top: '16px', right: '18px',
+                                    background: '#f0f0f0', border: 'none', borderRadius: '50%',
+                                    width: '32px', height: '32px', cursor: 'pointer',
+                                    fontSize: '1rem', color: '#666', fontWeight: '700',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                }}
+                            >✕</button>
+
+                            {/* Modal header */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '24px' }}>
+                                <div style={{
+                                    width: '46px', height: '46px', borderRadius: '12px',
+                                    background: '#fff5f2', border: '1px solid #ffe0d6',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    fontSize: '1.4rem', flexShrink: 0
+                                }}>💬</div>
+                                <div>
+                                    <h3 style={{ margin: '0 0 3px 0', fontSize: '1.1rem', fontWeight: '800', color: '#1a1614' }}>
+                                        Feedback Details
+                                    </h3>
+                                    <p style={{ margin: 0, fontSize: '0.8rem', color: '#aaa' }}>
+                                        Submitted on {selectedFeedback.submitted_at}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: '20px' }}>
+                                {/* Email */}
+                                <div style={{ marginBottom: '16px' }}>
+                                    <p style={{ margin: '0 0 4px 0', fontSize: '0.75rem', fontWeight: '700', color: '#aaa', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Email</p>
+                                    <p style={{ margin: 0, color: '#444', fontSize: '0.92rem' }}>{selectedFeedback.email || '—'}</p>
+                                </div>
+                                {/* Name */}
+                                <div style={{ marginBottom: '16px' }}>
+                                    <p style={{ margin: '0 0 4px 0', fontSize: '0.75rem', fontWeight: '700', color: '#aaa', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Name</p>
+                                    <p style={{ margin: 0, color: '#444', fontSize: '0.92rem', fontWeight: '600' }}>{selectedFeedback.name || 'Anonymous'}</p>
+                                </div>
+                                {/* Subject */}
+                                <div style={{ marginBottom: '16px' }}>
+                                    <p style={{ margin: '0 0 4px 0', fontSize: '0.75rem', fontWeight: '700', color: '#aaa', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Subject</p>
+                                    <p style={{ margin: 0, color: '#444', fontSize: '0.92rem' }}>{selectedFeedback.subject || '—'}</p>
+                                </div>
+                                {/* Message */}
+                                <div style={{ marginBottom: '28px' }}>
+                                    <p style={{ margin: '0 0 8px 0', fontSize: '0.75rem', fontWeight: '700', color: '#aaa', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Message</p>
+                                    <div style={{
+                                        background: '#f9f9f9', borderRadius: '12px',
+                                        padding: '16px 18px', border: '1px solid #eee'
+                                    }}>
+                                        <p style={{
+                                            margin: 0, color: '#333', fontSize: '0.92rem',
+                                            lineHeight: '1.7', whiteSpace: 'pre-wrap', wordBreak: 'break-word'
+                                        }}>
+                                            {selectedFeedback.message}
+                                        </p>
+                                    </div>
+                                </div>
+                                {/* Modal action buttons */}
+                                <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                                    <button
+                                        onClick={() => setSelectedFeedback(null)}
+                                        style={{
+                                            padding: '10px 22px', borderRadius: '30px',
+                                            border: '1px solid #ddd', background: '#fff',
+                                            color: '#555', fontWeight: '600', cursor: 'pointer',
+                                            fontSize: '0.88rem'
+                                        }}
+                                    >Close</button>
+                                    <button
+                                        className="action-btn delete"
+                                        style={{ padding: '10px 22px', borderRadius: '30px', fontSize: '0.88rem' }}
+                                        onClick={() => {
+                                            handleDeleteFeedback(selectedFeedback.id);
+                                            setSelectedFeedback(null);
+                                        }}
+                                    >Delete</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Date filter + Search bar row */}
+                <div className="music-card full-width-card filter-card-row">
+                    <span className="filter-label">Filter by Date:</span>
+                    <div className="date-inputs-wrapper">
+                        <div className="input-wrap">
+                            <label>From:</label>
+                            <input type="date" value={feedbackStartDate} onChange={(e) => setFeedbackStartDate(e.target.value)} />
+                        </div>
+                        <div className="input-wrap">
+                            <label>To:</label>
+                            <input type="date" value={feedbackEndDate} onChange={(e) => setFeedbackEndDate(e.target.value)} />
+                        </div>
+                        {(feedbackStartDate || feedbackEndDate) && (
+                            <button className="clear-date-btn" onClick={() => { setFeedbackStartDate(""); setFeedbackEndDate(""); }}>Clear Dates</button>
+                        )}
+                    </div>
+                </div>
+
+                <div className="table-controls-bar">
+                    <div className="search-wrapper">
+                        <input
+                            type="text"
+                            placeholder="Search by email, name, or subject..."
+                            value={feedbackSearchQuery}
+                            onChange={(e) => setFeedbackSearchQuery(e.target.value)}
+                            className="admin-search-input"
+                        />
+                    </div>
+                    <span style={{color: '#aaa', fontSize: '0.85rem', alignSelf: 'center'}}>
+                        {filteredFeedbacks.length} feedback{filteredFeedbacks.length !== 1 ? 's' : ''}
+                    </span>
+                </div>
+
+                {/* Feedbacks Table */}
+                <div className="music-card full-width-card" style={{ textAlign: "left", cursor: "default", overflowX: "auto" }}>
+                    <h3 style={{ borderBottom: "2px solid #f0f0f0", paddingBottom: "15px" }}>
+                        User Feedbacks
+                        {filteredFeedbacks.length > 0 && (
+                            <span style={{ fontSize: '0.85rem', fontWeight: '400', color: '#aaa', marginLeft: '10px' }}>
+                                ({filteredFeedbacks.length} total)
+                            </span>
+                        )}
+                    </h3>
+                    <p style={{ color: '#999', fontSize: '0.85rem', marginBottom: '20px' }}>
+                        Suggestions and issues submitted by users of the platform.
+                    </p>
+
+                    {loading ? (
+                        <div style={{textAlign: 'center', padding: '40px', color: '#666'}}>Loading feedbacks...</div>
+                    ) : filteredFeedbacks.length === 0 ? (
+                        <div style={{ padding: "50px", textAlign: "center", color: "#888" }}>
+                            <div style={{fontSize: '2.5rem', marginBottom: '12px'}}>💬</div>
+                            <p>No feedbacks found.</p>
+                        </div>
+                    ) : (
+                        <>
+                            <table style={{ width: "100%", marginTop: "10px", borderCollapse: "collapse" }}>
+                                <thead>
+                                    <tr style={{ textAlign: "left", color: "#8e44ad", fontSize: '0.95rem' }}>
+                                        <th style={{ padding: "15px", borderBottom: "2px solid #eee" }}>S.N.</th>
+                                        <th style={{ padding: "15px", borderBottom: "2px solid #eee" }}>Email</th>
+                                        <th style={{ padding: "15px", borderBottom: "2px solid #eee" }}>Name</th>
+                                        <th style={{ padding: "15px", borderBottom: "2px solid #eee" }}>Subject</th>
+                                        <th style={{ padding: "15px", borderBottom: "2px solid #eee" }}>Submitted At</th>
+                                        <th style={{ padding: "15px", borderBottom: "2px solid #eee" }}>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {paginatedFeedbacks.map((fb, index) => (
+                                        <tr key={fb.id} className="table-row">
+                                            <td style={{ padding: "15px" }}>
+                                                {(feedbackCurrentPage - 1) * FEEDBACKS_PER_PAGE + index + 1}
+                                            </td>
+                                            <td style={{ padding: "15px", color: "#555" }}>
+                                                {fb.email || <span style={{color:'#bbb'}}>—</span>}
+                                            </td>
+                                            <td style={{ padding: "15px", fontWeight: "600" }}>
+                                                {fb.name || <span style={{color:'#bbb', fontWeight:'400'}}>Anonymous</span>}
+                                            </td>
+                                            <td style={{ padding: "15px", color: "#666", fontSize: '0.88rem' }}>
+                                                {fb.subject || <span style={{color:'#bbb'}}>—</span>}
+                                            </td>
+                                            <td style={{ padding: "15px", color: "#888", fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
+                                                {fb.submitted_at}
+                                            </td>
+                                            <td style={{ padding: "15px" }}>
+                                                {/* Open button — shows full feedback in a modal */}
+                                                <button
+                                                    className="action-btn edit"
+                                                    style={{ marginRight: '6px' }}
+                                                    onClick={() => setSelectedFeedback(fb)}
+                                                >Open</button>
+                                                <button
+                                                    className="action-btn delete"
+                                                    onClick={() => handleDeleteFeedback(fb.id)}
+                                                >Delete</button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                            {/* Feedbacks Pagination */}
+                            {renderPagination(feedbackCurrentPage, feedbackTotalPages, setFeedbackCurrentPage)}
+                        </>
                     )}
                 </div>
             </div>
