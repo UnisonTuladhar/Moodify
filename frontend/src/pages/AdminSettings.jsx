@@ -19,6 +19,11 @@ export default function AdminSettings() {
 
   const userEmail = localStorage.getItem("email");
 
+  // Inline message state for each section
+  const [profileMsg, setProfileMsg] = useState({ text: "", type: "" });
+  const [passwordMsg, setPasswordMsg] = useState({ text: "", type: "" });
+  const [deleteMsg, setDeleteMsg] = useState({ text: "", type: "" });
+
   useEffect(() => {
     if (userEmail) fetchProfile();
   }, [userEmail]);
@@ -39,6 +44,7 @@ export default function AdminSettings() {
 
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
+    setProfileMsg({ text: "", type: "" });
     try {
       await axios.post("http://127.0.0.1:5000/user/update-profile", {
         email: userEmail,
@@ -47,37 +53,43 @@ export default function AdminSettings() {
         gender: user.gender
       });
       localStorage.setItem("username", user.username);
-      alert("Admin Profile Updated Successfully!");
-    } catch (err) { alert("Update failed"); }
+      setProfileMsg({ text: "Admin Profile Updated Successfully!", type: "success" });
+    } catch (err) { setProfileMsg({ text: "Update failed", type: "error" }); }
   };
 
   const handleChangePassword = async (e) => {
     e.preventDefault();
+    setPasswordMsg({ text: "", type: "" });
+    // Validate password length (6-18 characters)
+    if (passwords.new.length < 6 || passwords.new.length > 18) {
+      setPasswordMsg({ text: "New password must be between 6 and 18 characters.", type: "error" });
+      return;
+    }
     try {
       await axios.post("http://127.0.0.1:5000/user/change-password", {
         email: userEmail,
         current_password: passwords.current,
         new_password: passwords.new
       });
-      alert("Password Updated Successfully!");
+      setPasswordMsg({ text: "Password Updated Successfully!", type: "success" });
       setPasswords({ current: "", new: "" });
     } catch (err) { 
-      alert(err.response?.data?.error || "Failed to update password"); 
+      setPasswordMsg({ text: err.response?.data?.error || "Failed to update password", type: "error" }); 
     }
   };
 
   const handleDeleteAccount = async (e) => {
     e.preventDefault();
+    setDeleteMsg({ text: "", type: "" });
     try {
       await axios.post("http://127.0.0.1:5000/user/delete-account", {
         email: userEmail,
         password: delPassword
       });
-      alert("Admin Account Deleted.");
       localStorage.clear();
       navigate("/login");
     } catch (err) {
-      alert(err.response?.data?.error || "Incorrect Password or Cannot Delete Last Admin");
+      setDeleteMsg({ text: err.response?.data?.error || "Incorrect Password or Cannot Delete Last Admin", type: "error" });
     }
   };
 
@@ -88,6 +100,30 @@ export default function AdminSettings() {
 
   // Get initials for avatar
   const getInitials = (name) => name ? name.charAt(0).toUpperCase() : "A";
+
+  // Helper to render inline message banner
+  const InlineMessage = ({ msg }) => {
+    if (!msg.text) return null;
+    const isSuccess = msg.type === "success";
+    return (
+      <div style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "10px",
+        padding: "12px 18px",
+        borderRadius: "12px",
+        marginBottom: "16px",
+        fontSize: "0.9rem",
+        fontWeight: "600",
+        background: isSuccess ? "#f0faf4" : "#fff2f2",
+        color: isSuccess ? "#1a7f4b" : "#c0392b",
+        border: `1px solid ${isSuccess ? "#a8e6c3" : "#f5b7b1"}`,
+      }}>
+        <span style={{ fontSize: "1.1rem" }}>{isSuccess ? "✅" : "⚠️"}</span>
+        {msg.text}
+      </div>
+    );
+  };
 
   return (
     <div className="music-home-container settings-page-bg">
@@ -136,19 +172,19 @@ export default function AdminSettings() {
           <nav className="settings-nav-list">
             <button
               className={`sidebar-btn ${activeTab === 'profile' ? 'active' : ''}`}
-              onClick={() => setActiveTab("profile")}
+              onClick={() => { setActiveTab("profile"); setProfileMsg({ text: "", type: "" }); }}
             >
               <span className="sidebar-icon"></span> Profile
             </button>
             <button
               className={`sidebar-btn ${activeTab === 'password' ? 'active' : ''}`}
-              onClick={() => setActiveTab("password")}
+              onClick={() => { setActiveTab("password"); setPasswordMsg({ text: "", type: "" }); }}
             >
               <span className="sidebar-icon"></span> Security
             </button>
             <button
               className={`sidebar-btn sidebar-btn-danger ${activeTab === 'delete' ? 'active-danger' : ''}`}
-              onClick={() => { setActiveTab("delete"); setDeleteStep(1); }}
+              onClick={() => { setActiveTab("delete"); setDeleteStep(1); setDeleteMsg({ text: "", type: "" }); }}
             >
               <span className="sidebar-icon"></span> Delete Account
             </button>
@@ -173,7 +209,7 @@ export default function AdminSettings() {
                 <input
                   required
                   value={user.username}
-                  onChange={e => setUser({...user, username: e.target.value})}
+                  onChange={e => { setUser({...user, username: e.target.value}); setProfileMsg({ text: "", type: "" }); }}
                   placeholder="Enter your username"
                 />
               </div>
@@ -198,6 +234,8 @@ export default function AdminSettings() {
                   <option value="Prefer not to say">Prefer not to say</option>
                 </select>
               </div>
+              {/* Inline message above button */}
+              <InlineMessage msg={profileMsg} />
               <button className="settings-save-btn" type="submit">Save Changes</button>
             </form>
           )}
@@ -214,12 +252,14 @@ export default function AdminSettings() {
               <div className="settings-divider"></div>
               <div className="music-input-group">
                 <label>Current Password</label>
-                <input type="password" required placeholder="Enter current password" value={passwords.current} onChange={e => setPasswords({...passwords, current: e.target.value})} />
+                <input type="password" required placeholder="Enter current password" value={passwords.current} onChange={e => { setPasswords({...passwords, current: e.target.value}); setPasswordMsg({ text: "", type: "" }); }} />
               </div>
               <div className="music-input-group">
                 <label>New Password</label>
-                <input type="password" required placeholder="Enter new password" value={passwords.new} onChange={e => setPasswords({...passwords, new: e.target.value})} />
+                <input type="password" required placeholder="Enter new password (6–18 characters)" minLength={6} maxLength={18} value={passwords.new} onChange={e => { setPasswords({...passwords, new: e.target.value}); setPasswordMsg({ text: "", type: "" }); }} />
               </div>
+              {/* Inline message above button */}
+              <InlineMessage msg={passwordMsg} />
               <button className="settings-save-btn" type="submit">Update Password</button>
             </form>
           )}
@@ -243,8 +283,10 @@ export default function AdminSettings() {
                   <p style={{marginBottom: '25px', color: '#666'}}>Please enter your password to confirm permanent deletion.</p>
                   <div className="music-input-group">
                     <label>Password</label>
-                    <input type="password" placeholder="Enter your password" required value={delPassword} onChange={e => setDelPassword(e.target.value)} />
+                    <input type="password" placeholder="Enter your password" required value={delPassword} onChange={e => { setDelPassword(e.target.value); setDeleteMsg({ text: "", type: "" }); }} />
                   </div>
+                  {/* Inline message above buttons */}
+                  <InlineMessage msg={deleteMsg} />
                   <div className="delete-actions">
                     <button className="delete-confirm-btn" type="submit">Confirm Deletion</button>
                     <button className="delete-cancel-btn" type="button" onClick={() => setDeleteStep(1)}>Cancel</button>
