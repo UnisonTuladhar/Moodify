@@ -13,6 +13,8 @@ export default function ForgotPassword() {
   // State for loading and error messages
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(""); 
+  // State for inline success message on password reset
+  const [resetSuccess, setResetSuccess] = useState(false);
   const navigate = useNavigate(); 
   // Send OTP Logic 
   const sendOtp = async () => {
@@ -82,6 +84,11 @@ export default function ForgotPassword() {
     }
     
     // Check if passwords match
+    // Validate password length (6-18 characters)
+    if (newPassword.length < 6 || newPassword.length > 18) {
+        setError("Password must be between 6 and 18 characters.");
+        return;
+    }
     if(newPassword !== confirmPassword) {
         setError("Passwords do not match!");
         return;
@@ -95,8 +102,12 @@ export default function ForgotPassword() {
           new_password: newPassword
       });
       
-      alert("Password reset successfully. Please login.");
-      navigate("/login"); 
+      // Show inline success message instead of browser alert
+      setResetSuccess(true);
+      // Navigate to login after a short delay so user can read the message
+      setTimeout(() => {
+        navigate("/login"); 
+      }, 2500);
     } catch (err) { 
         setError(err.response?.data?.error || "Failed to reset password"); 
     } finally {
@@ -169,37 +180,65 @@ export default function ForgotPassword() {
           {step === 3 && (
             <>
               <h2>Create New Password</h2>
-              <div className="music-input-group">
-                <input 
-                    type="password" 
-                    placeholder="New Password" 
-                    onChange={e => setNewPassword(e.target.value)}
-                    onFocus={() => setError("")}
-                />
-              </div>
-              <div className="music-input-group">
-                <input 
-                    type="password" 
-                    placeholder="Confirm Password" 
-                    onChange={e => setConfirmPassword(e.target.value)} 
-                    onFocus={() => setError("")}
-                />
-              </div>
-              {/* Error Message Display */}
-              {error && (
-                <p style={{
-                    color: '#e74c3c', 
-                    fontSize: '0.95rem', 
-                    marginBottom: '20px', 
-                    textAlign: 'left',
-                    fontWeight: '600'
+              
+              {/* Inline success message shown after successful reset */}
+              {resetSuccess ? (
+                <div style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: "12px",
+                  padding: "24px 20px",
+                  borderRadius: "14px",
+                  background: "#f0faf4",
+                  border: "1px solid #a8e6c3",
+                  textAlign: "center",
+                  marginTop: "10px"
                 }}>
-                    {error}
-                </p>
+                  <span style={{ fontSize: "2.5rem" }}>✅</span>
+                  <p style={{ color: "#1a7f4b", fontWeight: "700", fontSize: "1rem", margin: 0 }}>
+                    Password reset successfully!
+                  </p>
+                  <p style={{ color: "#555", fontSize: "0.88rem", margin: 0 }}>
+                    Redirecting you to login...
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div className="music-input-group">
+                    <input 
+                        type="password" 
+                        placeholder="New Password (6–18 characters)" 
+                        maxLength={18}
+                        onChange={e => setNewPassword(e.target.value)}
+                        onFocus={() => setError("")}
+                    />
+                  </div>
+                  <div className="music-input-group">
+                    <input 
+                        type="password" 
+                        placeholder="Confirm Password" 
+                        onChange={e => setConfirmPassword(e.target.value)} 
+                        onFocus={() => setError("")}
+                    />
+                  </div>
+                  {/* Error Message Display */}
+                  {error && (
+                    <p style={{
+                        color: '#e74c3c', 
+                        fontSize: '0.95rem', 
+                        marginBottom: '20px', 
+                        textAlign: 'left',
+                        fontWeight: '600'
+                    }}>
+                        {error}
+                    </p>
+                  )}
+                  <button className="music-main-btn" onClick={resetPassword} disabled={isLoading}>
+                    {isLoading ? "Updating..." : "Update Password"}
+                  </button>
+                </>
               )}
-              <button className="music-main-btn" onClick={resetPassword} disabled={isLoading}>
-                {isLoading ? "Updating..." : "Update Password"}
-              </button>
             </>
           )}
         </div>
