@@ -6,7 +6,6 @@ import {
 import "../styles/Shared.css";
 import "../styles/Admin.css";
 import profileImg from "../images/profile.jpg"; 
-import Footer from "./Footer"; 
 
 // Consistent colors for the emotion bar chart
 const EMOTION_COLORS = {
@@ -147,7 +146,7 @@ export default function AdminHome() {
               className="admin-hero-btn primary"
               onClick={() => navigate("/admin-dashboard")}
             >
-              📊 View Analytics
+              View Analytics
             </button>
           </div>
         </div>
@@ -312,7 +311,6 @@ export default function AdminHome() {
           </>
         )}
       </div>
-      <Footer />
     </div>
   );
 }
