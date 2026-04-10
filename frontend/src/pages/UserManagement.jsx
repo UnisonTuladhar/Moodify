@@ -29,7 +29,7 @@ export default function UserManagement() {
         <div className="music-logo" onClick={() => navigate("/admin-home")} style={{cursor:'pointer'}}>
           Moodify <span style={{fontSize: "0.8rem", color: "#8e44ad"}}>ADMIN</span>
         </div>
-        <button className="music-logout-btn" onClick={() => navigate("/admin-home")}>Back to Panel</button>
+        <button className="music-logout-btn" onClick={() => navigate("/admin-home")}>Back to Home</button>
       </nav>
 
       <div className="music-home-content">
