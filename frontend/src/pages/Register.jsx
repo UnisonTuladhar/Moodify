@@ -24,6 +24,11 @@ export default function Register() {
       setError("Passwords do not match");
       return;
     }
+    // Validate password length (6-18 characters)
+    if (password.length < 6 || password.length > 18) {
+      setError("Password must be between 6 and 18 characters.");
+      return;
+    }
     // Validate email format before calling backend
     const emailRegex = /^[\w.-]+@[\w.-]+\.\w+$/;
     if (!emailRegex.test(email)) {
@@ -102,7 +107,7 @@ export default function Register() {
                 <input placeholder="Email" onChange={e => setEmail(e.target.value)} onFocus={() => setError("")} />
               </div>
               <div className="music-input-group">
-                <input type="password" placeholder="Password" onChange={e => setPassword(e.target.value)} onFocus={() => setError("")} />
+                <input type="password" placeholder="Password (6–18 characters)" maxLength={18} onChange={e => setPassword(e.target.value)} onFocus={() => setError("")} />
               </div>
               <div className="music-input-group">
                 <input type="password" placeholder="Confirm Password" onChange={e => setConfirmPassword(e.target.value)} onFocus={() => setError("")} />
@@ -154,3 +159,4 @@ export default function Register() {
     </div>
   );
 }
+

@@ -24,6 +24,10 @@ export default function Login() {
         localStorage.setItem("username", res.data.username);
         localStorage.setItem("email", res.data.email);
         localStorage.setItem("is_admin", res.data.is_admin); 
+
+        // Clear any previously detected mood from a different session or user
+        sessionStorage.removeItem("moodify_confirmed_mood");
+        sessionStorage.removeItem("moodify_playlist");
         
         if (res.data.is_admin === 1) {
           navigate("/admin-home"); 
