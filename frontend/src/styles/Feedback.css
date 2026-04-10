@@ -1,0 +1,141 @@
+.feedback-page-wrapper {
+    max-width: 680px;
+    width: 92%;
+    margin: 40px auto 80px auto;
+}
+
+.feedback-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.07);
+    padding: 40px 44px;
+}
+
+/* Header */
+.feedback-card-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 28px;
+}
+
+.feedback-header-icon {
+    width: 52px;
+    height: 52px;
+    background: #fff5f2;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+    border: 1px solid #ffe0d6;
+}
+
+.feedback-card-header h2 {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: #1a1614;
+    margin: 0 0 4px 0;
+}
+
+.feedback-card-header p {
+    color: #aaa;
+    font-size: 0.85rem;
+    margin: 0;
+}
+
+/* Auto-filled label tag */
+.feedback-auto-label {
+    font-size: 0.78rem;
+    color: #aaa;
+    font-weight: 400;
+    margin-left: 6px;
+}
+
+/* Read-only email input */
+.feedback-readonly-input {
+    background: #f9f9f9 !important;
+    color: #999 !important;
+    cursor: not-allowed;
+}
+
+/* Textarea */
+.feedback-textarea {
+    width: 100%;
+    padding: 16px 20px;
+    border: 1px solid #ddd;
+    border-radius: 14px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.2s;
+    color: #333;
+    box-sizing: border-box;
+    line-height: 1.6;
+}
+
+.feedback-textarea:focus {
+    border-color: #ff4e00;
+    box-shadow: 0 0 0 3px rgba(255, 78, 0, 0.08);
+}
+
+.feedback-textarea::placeholder {
+    color: #bbb;
+}
+
+/* Character count */
+.feedback-char-count {
+    text-align: right;
+    font-size: 0.78rem;
+    color: #bbb;
+    margin-top: 5px;
+}
+
+/* Error message */
+.feedback-error-msg {
+    color: #e74c3c;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 14px;
+}
+
+/* Success box */
+.feedback-success-box {
+    text-align: center;
+    padding: 30px 20px;
+}
+
+.feedback-success-icon {
+    font-size: 3rem;
+    margin-bottom: 16px;
+}
+
+.feedback-success-box h3 {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #1a1614;
+    margin: 0 0 10px 0;
+}
+
+.feedback-success-box p {
+    color: #777;
+    font-size: 0.92rem;
+    margin: 0 0 28px 0;
+}
+
+.feedback-success-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .feedback-card {
+        padding: 28px 20px;
+    }
+}
