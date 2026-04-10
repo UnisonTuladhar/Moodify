@@ -13,6 +13,7 @@ import MoodDetection from "./pages/MoodDetection";
 import AboutUs from "./pages/AboutUs";
 import UserManual from "./pages/UserManual"; 
 import Playlists from "./pages/Playlists";
+import Feedback from "./pages/Feedback";
 
 function PublicRoute({ children }) {
   const email = localStorage.getItem("email");
@@ -49,7 +50,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Root redirect — goes to login if not authenticated, or home if already logged in */}
+        {/* Goes to login if not authenticated, or home if already logged in */}
         <Route path="/" element={<Navigate to="/login" />} />
 
         {/* Public routes — accessible only when NOT logged in */}
@@ -63,8 +64,9 @@ export default function App() {
         <Route path="/detect-mood" element={<PrivateRoute userOnly><MoodDetection /></PrivateRoute>} />
         <Route path="/dashboard" element={<PrivateRoute userOnly><Dashboard /></PrivateRoute>} /> 
         <Route path="/settings" element={<PrivateRoute userOnly><Settings /></PrivateRoute>} />  
-        <Route path="/user-manual" element={<PrivateRoute userOnly><UserManual /></PrivateRoute>} /> 
+        <Route path="/user-manual" element={<UserManual />} />
         <Route path="/playlists" element={<PrivateRoute userOnly><Playlists /></PrivateRoute>} />
+        <Route path="/feedback" element={<PrivateRoute userOnly><Feedback /></PrivateRoute>} />
 
         {/* Admin-only routes — accessible only by logged-in admins (not regular users) */}
         <Route path="/admin-home" element={<PrivateRoute adminOnly><AdminHome /></PrivateRoute>} />
