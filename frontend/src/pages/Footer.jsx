@@ -34,10 +34,10 @@ const Footer = () => {
             <h4>Quick Links</h4>
             <ul>
               <li onClick={() => navigate("/home")}>Home</li>
-              <li onClick={() => navigate("/about")}>About</li>
+              <li onClick={() => navigate("/about")}>About Us</li>
               <li onClick={() => navigate("/settings")}>Profile</li>
-              <li onClick={() => navigate("/dashboard")}>Dashboard</li>
               <li onClick={() => navigate("/detect-mood")}>Detect-Mood</li>
+              <li onClick={() => navigate("/dashboard")}>Dashboard</li>
               <li onClick={() => navigate("/playlists")}>Playlists</li>
               <li onClick={handleLogout} >Logout</li>
             </ul>
@@ -56,6 +56,12 @@ const Footer = () => {
               <li>
                 <a href="https://x.com/login" target="_blank" rel="noopener noreferrer">Twitter</a>
               </li>
+            </ul>
+
+            <h4 style={{ marginTop: "30px" }}>Having Problems?</h4>
+            <ul>
+              <li onClick={() => navigate("/user-manual")}>User Manual</li>
+              <li onClick={() => navigate("/feedback")}>Give us Feedback</li>
             </ul>
           </div>
 
