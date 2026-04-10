@@ -201,7 +201,7 @@ export default function UserManual() {
   const handleBack = () => {
     navigate(isLoggedIn ? "/home" : "/login");
   };
-  const backLabel = isLoggedIn ? "Back to Home" : "← Back to Login";
+  const backLabel = isLoggedIn ? "Back to Home" : "Back to Login";
 
   return (
     <div className="manual-root">
