@@ -12,6 +12,7 @@ from werkzeug.utils import secure_filename
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing.image import img_to_array
 from flask_mail import Mail, Message
+import threading
 
 app = Flask(__name__)
 CORS(app)
@@ -53,6 +54,14 @@ camera_instance = None
 # Jamendo API Client ID
 JAMENDO_CLIENT_ID = "78515f42"
 
+# SMOOTH CAMERA
+latest_frame_bytes = None
+frame_lock = threading.Lock()
+
+# Counter to throttle AI inference — only run every N frames for speed
+_frame_counter = 0
+AI_INFERENCE_EVERY_N_FRAMES = 3  # Run emotion model every 3rd frame
+
 try:
     classifier = load_model(MODEL_PATH)
     face_classifier = cv2.CascadeClassifier(CASCADE_PATH)
@@ -65,52 +74,91 @@ def get_camera():
     global camera_instance
     if camera_instance is None or not camera_instance.isOpened():
         camera_instance = cv2.VideoCapture(0)
+        # Set lower resolution for faster capture and processing
+        camera_instance.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+        camera_instance.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+        # Set buffer size to 1 so we always get the freshest frame
+        camera_instance.set(cv2.CAP_PROP_BUFFERSIZE, 1)
         print("Camera opened.")
     return camera_instance
 
 def release_camera():
     """Explicitly release the camera hardware so the camera light turns off immediately."""
-    global camera_instance
+    global camera_instance, latest_frame_bytes
     if camera_instance is not None and camera_instance.isOpened():
         camera_instance.release()
         print("Camera released — light should be off.")
     camera_instance = None
+    with frame_lock:
+        latest_frame_bytes = None
+
+def camera_capture_loop():
+    """
+    Background thread that continuously reads frames from the camera,
+    runs face detection + emotion inference (throttled), encodes to JPEG,
+    and stores the result in latest_frame_bytes.
+    This decouples capture speed from HTTP request speed.
+    """
+    global last_predicted_mood, detection_active, latest_frame_bytes, _frame_counter
+
+    cam = get_camera()
+    last_label = "None"  # Cache the last detected label so we can draw it on skipped frames
+
+    while detection_active:
+        success, frame = cam.read()
+        if not success:
+            continue
+
+        _frame_counter += 1
+
+        # Resize frame for faster processing
+        small_frame = cv2.resize(frame, (320, 240), interpolation=cv2.INTER_LINEAR)
+        gray_small = cv2.cvtColor(small_frame, cv2.COLOR_BGR2GRAY)
+
+        # Only run the heavy AI inference every N frames to keep FPS high
+        run_ai = (_frame_counter % AI_INFERENCE_EVERY_N_FRAMES == 0)
+
+        faces = face_classifier.detectMultiScale(gray_small, 1.1, 4, minSize=(30, 30))
+
+        if len(faces) == 0:
+            last_predicted_mood = "None"
+            last_label = "None"
+        else:
+            for (x, y, w, h) in faces:
+                # Scale rectangle coords back up to original frame size for drawing
+                scale_x = frame.shape[1] / small_frame.shape[1]
+                scale_y = frame.shape[0] / small_frame.shape[0]
+                rx, ry, rw, rh = int(x * scale_x), int(y * scale_y), int(w * scale_x), int(h * scale_y)
+                cv2.rectangle(frame, (rx, ry), (rx + rw, ry + rh), (255, 0, 255), 2)
+
+                if run_ai:
+                    # Only run CNN inference on AI frames
+                    roi_gray = gray_small[y:y + h, x:x + w]
+                    roi_gray = cv2.resize(roi_gray, (48, 48), interpolation=cv2.INTER_AREA)
+                    if np.sum(roi_gray) != 0:
+                        roi = roi_gray.astype('float') / 255.0
+                        roi = img_to_array(roi)
+                        roi = np.expand_dims(roi, axis=0)
+                        prediction = classifier.predict(roi, verbose=0)[0]
+                        last_label = emotion_labels[prediction.argmax()]
+                        last_predicted_mood = last_label
+
+                # Always draw the cached label 
+                if last_label and last_label != "None":
+                    label_position = (rx, ry - 10)
+                    cv2.putText(frame, f"Mood: {last_label}", label_position,
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+
+        encode_params = [cv2.IMWRITE_JPEG_QUALITY, 75]
+        ret, jpeg = cv2.imencode('.jpg', frame, encode_params)
+        if ret:
+            with frame_lock:
+                latest_frame_bytes = jpeg.tobytes()
 
 def get_frame_from_camera():
-    """Capture one frame, run face detection and emotion prediction, return JPEG bytes."""
-    global last_predicted_mood
-    cam = get_camera()
-    success, frame = cam.read()
-    if not success:
-        return None
-
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    faces = face_classifier.detectMultiScale(gray, 1.3, 5)
-
-    if len(faces) == 0:
-        last_predicted_mood = "None"
-
-    for (x, y, w, h) in faces:
-        cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 255), 2)
-        roi_gray = gray[y:y+h, x:x+w]
-        roi_gray = cv2.resize(roi_gray, (48, 48), interpolation=cv2.INTER_AREA)
-
-        if np.sum([roi_gray]) != 0:
-            roi = roi_gray.astype('float') / 255.0
-            roi = img_to_array(roi)
-            roi = np.expand_dims(roi, axis=0)
-
-            prediction = classifier.predict(roi)[0]
-            label = emotion_labels[prediction.argmax()]
-            last_predicted_mood = label
-
-            label_position = (x, y-10)
-            cv2.putText(frame, f"Mood: {label}", label_position, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-        else:
-            cv2.putText(frame, 'No Face Found', (20, 60), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-
-    ret, jpeg = cv2.imencode('.jpg', frame)
-    return jpeg.tobytes()
+    """Return the latest pre-encoded JPEG frame (non-blocking, thread-safe)."""
+    with frame_lock:
+        return latest_frame_bytes
 
 
 @app.route('/get_frame')
@@ -134,6 +182,8 @@ def start_detection():
     detection_active = True
     last_predicted_mood = "None"  
     get_camera()  
+    t = threading.Thread(target=camera_capture_loop, daemon=True)
+    t.start()
     print("Detection started.")
     return jsonify({"message": "Detection started"}), 200
 
@@ -539,17 +589,45 @@ def get_all_users():
     finally:
         db.close()
 
-# Delete user (Admin)
+# Delete user (Admin) 
 @app.post("/admin/delete-user")
 def admin_delete_user():
     data = request.json
     user_id = data.get("id")
     db = get_db_connection()
-    cursor = db.cursor()
+    cursor = db.cursor(dictionary=True)
     try:
+        # Check if the target user is an admin
+        cursor.execute("SELECT is_admin FROM users WHERE id=%s", (user_id,))
+        target = cursor.fetchone()
+        if target and target["is_admin"] == 1:
+            return jsonify({"error": "Admin accounts cannot be deleted from User Management. Admins must delete their own account from their Settings page."}), 403
         cursor.execute("DELETE FROM users WHERE id=%s", (user_id,))
         db.commit()
         return jsonify({"message": "User deleted successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        db.close()
+
+# Edit user (Admin) 
+@app.post("/admin/edit-user")
+def admin_edit_user():
+    data = request.json
+    user_id = data.get("id")
+    new_username = data.get("username", "").strip()
+    new_email = data.get("email", "").lower().strip()
+    db = get_db_connection()
+    cursor = db.cursor(dictionary=True)
+    try:
+        # Check if the target user is an admin — admins cannot be edited from user management
+        cursor.execute("SELECT is_admin FROM users WHERE id=%s", (user_id,))
+        target = cursor.fetchone()
+        if target and target["is_admin"] == 1:
+            return jsonify({"error": "Admin accounts cannot be edited from User Management. Admins must update their own profile from their Settings page."}), 403
+        cursor.execute("UPDATE users SET username=%s, email=%s WHERE id=%s", (new_username, new_email, user_id))
+        db.commit()
+        return jsonify({"message": "User updated successfully"}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     finally:
