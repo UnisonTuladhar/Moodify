@@ -13,6 +13,9 @@ export default function Register() {
   const [otp, setOtp] = useState(new Array(6).fill(""));
   const [error, setError] = useState(""); 
   const [isLoading, setIsLoading] = useState(false);
+  // State to toggle password visibility
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate(); 
   const requestOtp = async () => {
     setError(""); 
@@ -77,6 +80,22 @@ export default function Register() {
       setIsLoading(false);
     }
   };
+
+  // Reusable eye toggle SVG icons
+  const EyeIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+      <circle cx="12" cy="12" r="3"/>
+    </svg>
+  );
+  const EyeOffIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+      <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+      <line x1="1" y1="1" x2="23" y2="23"/>
+    </svg>
+  );
+
   return (
     <div className="music-container">
       <div 
@@ -106,11 +125,72 @@ export default function Register() {
               <div className="music-input-group">
                 <input placeholder="Email" onChange={e => setEmail(e.target.value)} onFocus={() => setError("")} />
               </div>
-              <div className="music-input-group">
-                <input type="password" placeholder="Password (6–18 characters)" maxLength={18} onChange={e => setPassword(e.target.value)} onFocus={() => setError("")} />
+              {/* Password field with eye toggle */}
+              <div className="music-input-group" style={{ position: "relative" }}>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Password (6–18 characters)"
+                  maxLength={18}
+                  onChange={e => setPassword(e.target.value)}
+                  onFocus={() => setError("")}
+                  style={{ paddingRight: "48px" }}
+                />
+                {/* Eye toggle button */}
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(prev => !prev)}
+                  style={{
+                    position: "absolute",
+                    right: "16px",
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    padding: "0",
+                    display: "flex",
+                    alignItems: "center",
+                    color: "#aaa",
+                    zIndex: 2
+                  }}
+                  tabIndex={-1}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                </button>
               </div>
-              <div className="music-input-group">
-                <input type="password" placeholder="Confirm Password" onChange={e => setConfirmPassword(e.target.value)} onFocus={() => setError("")} />
+              {/* Confirm Password field with eye toggle */}
+              <div className="music-input-group" style={{ position: "relative" }}>
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  placeholder="Confirm Password"
+                  onChange={e => setConfirmPassword(e.target.value)}
+                  onFocus={() => setError("")}
+                  style={{ paddingRight: "48px" }}
+                />
+                {/* Eye toggle button */}
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(prev => !prev)}
+                  style={{
+                    position: "absolute",
+                    right: "16px",
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    padding: "0",
+                    display: "flex",
+                    alignItems: "center",
+                    color: "#aaa",
+                    zIndex: 2
+                  }}
+                  tabIndex={-1}
+                  aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                >
+                  {showConfirmPassword ? <EyeOffIcon /> : <EyeIcon />}
+                </button>
               </div>
               
               {/* Error Message */}
@@ -159,4 +239,3 @@ export default function Register() {
     </div>
   );
 }
-

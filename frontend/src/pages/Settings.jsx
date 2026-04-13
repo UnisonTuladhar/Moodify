@@ -23,6 +23,11 @@ export default function Settings() {
   const [passwordMsg, setPasswordMsg] = useState({ text: "", type: "" });
   const [deleteMsg, setDeleteMsg] = useState({ text: "", type: "" });
 
+  // State to toggle password visibility for each password field
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showDelPassword, setShowDelPassword] = useState(false);
+
   useEffect(() => {
     if (userEmail) fetchProfile();
   }, [userEmail]);
@@ -122,6 +127,37 @@ export default function Settings() {
         {msg.text}
       </div>
     );
+  };
+
+  // Reusable eye toggle SVG icons
+  const EyeIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+      <circle cx="12" cy="12" r="3"/>
+    </svg>
+  );
+  const EyeOffIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+      <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+      <line x1="1" y1="1" x2="23" y2="23"/>
+    </svg>
+  );
+
+  // Reusable eye toggle button style
+  const eyeBtnStyle = {
+    position: "absolute",
+    right: "16px",
+    top: "50%",
+    transform: "translateY(-50%)",
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    padding: "0",
+    display: "flex",
+    alignItems: "center",
+    color: "#aaa",
+    zIndex: 2
   };
 
   return (
@@ -248,13 +284,55 @@ export default function Settings() {
                 </div>
               </div>
               <div className="settings-divider"></div>
+              {/* Current Password field with eye toggle */}
               <div className="music-input-group">
                 <label>Current Password</label>
-                <input type="password" required placeholder="Enter current password" value={passwords.current} onChange={e => { setPasswords({...passwords, current: e.target.value}); setPasswordMsg({ text: "", type: "" }); }} />
+                <div style={{ position: "relative" }}>
+                  <input
+                    type={showCurrentPassword ? "text" : "password"}
+                    required
+                    placeholder="Enter current password"
+                    value={passwords.current}
+                    onChange={e => { setPasswords({...passwords, current: e.target.value}); setPasswordMsg({ text: "", type: "" }); }}
+                    style={{ paddingRight: "48px", width: "100%", boxSizing: "border-box" }}
+                  />
+                  {/* Eye toggle button */}
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrentPassword(prev => !prev)}
+                    style={eyeBtnStyle}
+                    tabIndex={-1}
+                    aria-label={showCurrentPassword ? "Hide password" : "Show password"}
+                  >
+                    {showCurrentPassword ? <EyeOffIcon /> : <EyeIcon />}
+                  </button>
+                </div>
               </div>
+              {/* New Password field with eye toggle */}
               <div className="music-input-group">
                 <label>New Password</label>
-                <input type="password" required placeholder="Enter new password (6–18 characters)" minLength={6} maxLength={18} value={passwords.new} onChange={e => { setPasswords({...passwords, new: e.target.value}); setPasswordMsg({ text: "", type: "" }); }} />
+                <div style={{ position: "relative" }}>
+                  <input
+                    type={showNewPassword ? "text" : "password"}
+                    required
+                    placeholder="Enter new password (6–18 characters)"
+                    minLength={6}
+                    maxLength={18}
+                    value={passwords.new}
+                    onChange={e => { setPasswords({...passwords, new: e.target.value}); setPasswordMsg({ text: "", type: "" }); }}
+                    style={{ paddingRight: "48px", width: "100%", boxSizing: "border-box" }}
+                  />
+                  {/* Eye toggle button */}
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(prev => !prev)}
+                    style={eyeBtnStyle}
+                    tabIndex={-1}
+                    aria-label={showNewPassword ? "Hide password" : "Show password"}
+                  >
+                    {showNewPassword ? <EyeOffIcon /> : <EyeIcon />}
+                  </button>
+                </div>
               </div>
               {/* Inline message above button */}
               <InlineMessage msg={passwordMsg} />
@@ -279,9 +357,29 @@ export default function Settings() {
                   <div className="delete-warning-icon"></div>
                   <h2>Verify Identity</h2>
                   <p style={{marginBottom: '25px', color: '#666'}}>Please enter your password to confirm permanent deletion.</p>
+                  {/* Delete account password field with eye toggle */}
                   <div className="music-input-group">
                     <label>Password</label>
-                    <input type="password" placeholder="Enter your password" required value={delPassword} onChange={e => { setDelPassword(e.target.value); setDeleteMsg({ text: "", type: "" }); }} />
+                    <div style={{ position: "relative" }}>
+                      <input
+                        type={showDelPassword ? "text" : "password"}
+                        placeholder="Enter your password"
+                        required
+                        value={delPassword}
+                        onChange={e => { setDelPassword(e.target.value); setDeleteMsg({ text: "", type: "" }); }}
+                        style={{ paddingRight: "48px", width: "100%", boxSizing: "border-box" }}
+                      />
+                      {/* Eye toggle button */}
+                      <button
+                        type="button"
+                        onClick={() => setShowDelPassword(prev => !prev)}
+                        style={eyeBtnStyle}
+                        tabIndex={-1}
+                        aria-label={showDelPassword ? "Hide password" : "Show password"}
+                      >
+                        {showDelPassword ? <EyeOffIcon /> : <EyeIcon />}
+                      </button>
+                    </div>
                   </div>
                   {/* Inline message above buttons */}
                   <InlineMessage msg={deleteMsg} />
