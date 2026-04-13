@@ -353,7 +353,6 @@
     font-weight: 800;
     margin: 15px 0;
     background: linear-gradient(90deg, #ff4e00, #ec008c);
-    -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     text-transform: capitalize;
 }
