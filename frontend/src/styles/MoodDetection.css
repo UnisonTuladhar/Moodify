@@ -544,3 +544,20 @@
     border-bottom: 1px solid #ebebeb;
     padding: 14px 60px;
 }
+
+.playlist-name-input {
+  flex: 1;
+  padding: 9px 13px;
+  border: 1.5px solid #e8e8e8;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  outline: none;
+  font-family: inherit;
+  background: #fafafa;
+  min-width: 0;
+  transition: border-color 0.2s, background 0.2s;
+}
+.playlist-name-input:focus {
+  border-color: #d63fb5;
+  background: #fff;
+}

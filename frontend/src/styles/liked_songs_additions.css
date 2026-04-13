@@ -1,4 +1,3 @@
-/* Heart like button on each song row */
 .like-btn {
     background: none;
     border: 1.5px solid #e0e0e0;
@@ -208,4 +207,356 @@
     .liked-song-row audio {
         width: 100% !important;
     }
+}
+
+.add-to-playlist-btn {
+    background: none;
+    border: 1.5px solid #e0e0e0;
+    cursor: pointer;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+    flex-shrink: 0;
+    padding: 0;
+}
+
+.add-to-playlist-btn:hover {
+    transform: scale(1.15);
+    background: rgba(214, 63, 181, 0.08);
+    border-color: #d63fb5;
+}
+
+.add-to-playlist-btn:hover svg {
+    stroke: #d63fb5;
+}
+
+/* Full-screen dark backdrop */
+.playlist-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    box-sizing: border-box;
+    animation: pmOverlayIn 0.2s ease;
+}
+
+@keyframes pmOverlayIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+/* White modal card */
+.playlist-modal {
+    background: #ffffff;
+    border-radius: 20px;
+    width: 100%;
+    max-width: 440px;
+    max-height: 88vh;
+    overflow-y: auto;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.22);
+    display: flex;
+    flex-direction: column;
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+    animation: pmSlideUp 0.25s ease;
+    position: relative;
+    z-index: 100000;
+}
+
+@keyframes pmSlideUp {
+    from { opacity: 0; transform: translateY(28px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Modal header row */
+.playlist-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 22px 16px;
+    border-bottom: 1px solid #f0f0f0;
+    flex-shrink: 0;
+}
+
+.playlist-modal-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin: 0;
+    letter-spacing: -0.2px;
+}
+
+.playlist-modal-close {
+    background: #f5f5f5;
+    border: none;
+    font-size: 0.85rem;
+    color: #666;
+    cursor: pointer;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, color 0.15s;
+    flex-shrink: 0;
+    padding: 0;
+    font-weight: 600;
+    line-height: 1;
+}
+
+.playlist-modal-close:hover {
+    background: #ebebeb;
+    color: #333;
+}
+
+/* Song info strip inside modal */
+.playlist-modal-song-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 22px;
+    background: #fafafa;
+    border-bottom: 1px solid #f0f0f0;
+    flex-shrink: 0;
+}
+
+.playlist-modal-song-thumb {
+    width: 46px;
+    height: 46px;
+    border-radius: 8px;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.playlist-modal-song-thumb-placeholder {
+    width: 46px;
+    height: 46px;
+    background: linear-gradient(135deg, #f0e6ff, #ffe0f5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+
+.playlist-modal-song-name {
+    margin: 0 0 3px 0;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #1a1a2e;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 300px;
+}
+
+.playlist-modal-song-artist {
+    margin: 0;
+    font-size: 0.78rem;
+    color: #999;
+}
+
+/* Create new playlist input row */
+.playlist-modal-create {
+    display: flex;
+    gap: 9px;
+    padding: 16px 22px;
+    border-bottom: 1px solid #f0f0f0;
+    flex-shrink: 0;
+    align-items: center;
+}
+
+.playlist-modal-input {
+    flex: 1;
+    padding: 10px 14px;
+    border: 1.5px solid #e8e8e8;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    color: #333;
+    outline: none;
+    background: #fafafa;
+    transition: border-color 0.2s, background 0.2s;
+    font-family: inherit;
+    min-width: 0;
+}
+
+.playlist-modal-input:focus {
+    border-color: #d63fb5;
+    background: #fff;
+}
+
+.playlist-modal-input::placeholder {
+    color: #c0c0c0;
+}
+
+.playlist-modal-create-btn {
+    padding: 10px 16px;
+    background: linear-gradient(135deg, #e05c2a, #d63fb5);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity 0.2s, transform 0.15s;
+    font-family: inherit;
+    flex-shrink: 0;
+}
+
+.playlist-modal-create-btn:hover:not(:disabled) {
+    opacity: 0.9;
+    transform: translateY(-1px);
+}
+
+.playlist-modal-create-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* OR divider */
+.playlist-modal-divider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 22px 6px;
+    color: #ccc;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    flex-shrink: 0;
+}
+
+.playlist-modal-divider::before,
+.playlist-modal-divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: #f0f0f0;
+}
+
+/* Scrollable existing playlists list */
+.playlist-modal-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 4px 0;
+    min-height: 50px;
+}
+
+.playlist-modal-empty {
+    text-align: center;
+    color: #c0c0c0;
+    font-size: 0.85rem;
+    padding: 18px 22px;
+    margin: 0;
+}
+
+/* Individual playlist row button */
+.playlist-modal-item {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    padding: 11px 22px;
+    background: none;
+    border: none;
+    border-bottom: 1px solid #f8f8f8;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.15s;
+    font-family: inherit;
+    box-sizing: border-box;
+}
+
+.playlist-modal-item:last-child {
+    border-bottom: none;
+}
+
+.playlist-modal-item:hover:not(:disabled) {
+    background: #fdf0ff;
+}
+
+.playlist-modal-item:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Icon/cover for each playlist row */
+.playlist-modal-item-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #f5e6ff, #ffe6f0);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+.playlist-modal-item-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.playlist-modal-item-name {
+    flex: 1;
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: #222;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.playlist-modal-item-add {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #d63fb5;
+    flex-shrink: 0;
+    background: rgba(214, 63, 181, 0.09);
+    padding: 4px 10px;
+    border-radius: 20px;
+}
+
+/* View all playlists footer link */
+.playlist-modal-view-all {
+    display: block;
+    width: 100%;
+    padding: 14px 22px;
+    border: none;
+    border-top: 1px solid #f0f0f0;
+    background: #fafafa;
+    color: #999;
+    font-size: 0.87rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    transition: color 0.2s, background 0.2s;
+    border-radius: 0 0 20px 20px;
+    font-family: inherit;
+    flex-shrink: 0;
+    box-sizing: border-box;
+}
+
+.playlist-modal-view-all:hover {
+    color: #d63fb5;
+    background: #f8eeff;
 }

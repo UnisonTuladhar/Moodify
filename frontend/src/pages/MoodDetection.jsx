@@ -5,7 +5,6 @@ import "../styles/Shared.css";
 import "../styles/MoodDetection.css";
 import profileImg from "../images/profile.jpg"; 
 import Footer from "./Footer";
-
 export default function MoodDetection() {
   const navigate = useNavigate();
   const [showDropdown, setShowDropdown] = useState(false);
@@ -18,11 +17,22 @@ export default function MoodDetection() {
   const [playlist, setPlaylist] = useState([]);
   const [playlistLoading, setPlaylistLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
+  const [languageFilter, setLanguageFilter] = useState("All");
   const [likedSongIds, setLikedSongIds] = useState(new Set());
   const [likeToast, setLikeToast] = useState(null);
-  const [frameSrc, setFrameSrc] = useState(null);
-  const frameIntervalRef = useRef(null);
+  const cameraImgRef = useRef(null);
+  const pollingActiveRef = useRef(false);
   const userEmail = localStorage.getItem("email");
+  // ── PLAYLIST MODAL STATE ──
+  const [showPlaylistModal, setShowPlaylistModal] = useState(false);
+  const [modalSong, setModalSong] = useState(null);
+  const [userPlaylists, setUserPlaylists] = useState([]);
+  const [playlistsLoading, setPlaylistsLoading] = useState(false);
+  const [newPlaylistName, setNewPlaylistName] = useState("");
+  const [creatingPlaylist, setCreatingPlaylist] = useState(false);
+  const [addingToPlaylistId, setAddingToPlaylistId] = useState(null);
+  // ── Shuffle loading state ──
+  const [shuffling, setShuffling] = useState(false);
 
   const handleLogout = () => {
     localStorage.clear();
@@ -30,43 +40,56 @@ export default function MoodDetection() {
     sessionStorage.removeItem("moodify_playlist");
     navigate("/login");
   };
-
   const showToast = (msg, isError = false) => {
     setLikeToast({ msg, isError });
     setTimeout(() => setLikeToast(null), 2500);
   };
-
   const startFramePolling = () => {
-    if (frameIntervalRef.current) clearInterval(frameIntervalRef.current);
-    frameIntervalRef.current = setInterval(async () => {
-      try {
-        const res = await fetch("http://127.0.0.1:5000/get_frame");
-        if (res.status === 204) return;
-        const blob = await res.blob();
-        setFrameSrc(prev => {
-          if (prev) URL.revokeObjectURL(prev);
-          return URL.createObjectURL(blob);
-        });
-      } catch (err) {
-      }
-    }, 200); 
+    // Stop any existing loop first
+    pollingActiveRef.current = false;
+    // Small delay to let previous loop exit, then start fresh
+    setTimeout(() => {
+      pollingActiveRef.current = true;
+      const fetchNextFrame = async () => {
+        if (!pollingActiveRef.current) return;
+        try {
+          const res = await fetch("http://127.0.0.1:5000/get_frame");
+          if (res.status !== 204) {
+            const blob = await res.blob();
+            if (cameraImgRef.current && pollingActiveRef.current) {
+              const newUrl = URL.createObjectURL(blob);
+              const oldUrl = cameraImgRef.current.src;
+              cameraImgRef.current.src = newUrl;
+              if (oldUrl && oldUrl.startsWith("blob:")) {
+                URL.revokeObjectURL(oldUrl);
+              }
+            } else {
+              URL.revokeObjectURL(URL.createObjectURL(blob));
+            }
+          }
+        } catch (err) {
+        }
+        if (pollingActiveRef.current) {
+          fetchNextFrame();
+        }
+      };
+      fetchNextFrame();
+    }, 50);
   };
-
   const stopFramePolling = () => {
-    if (frameIntervalRef.current) {
-      clearInterval(frameIntervalRef.current);
-      frameIntervalRef.current = null;
+    pollingActiveRef.current = false;
+    // Clear the img src so a stale frame isn't shown
+    if (cameraImgRef.current) {
+      const oldUrl = cameraImgRef.current.src;
+      cameraImgRef.current.src = "";
+      if (oldUrl && oldUrl.startsWith("blob:")) {
+        URL.revokeObjectURL(oldUrl);
+      }
     }
-    setFrameSrc(prev => {
-      if (prev) URL.revokeObjectURL(prev);
-      return null;
-    });
   };
-
   useEffect(() => {
     const savedMood = sessionStorage.getItem("moodify_confirmed_mood");
     const savedPlaylist = sessionStorage.getItem("moodify_playlist");
-
     if (savedMood) {
       setConfirmedMood(savedMood);
       setIsDetecting(true); 
@@ -80,12 +103,10 @@ export default function MoodDetection() {
         }
       }
     }
-
     return () => {
       stopFramePolling();
     };
   }, []); 
-
   // Save mood to database
   const saveMoodToDB = async (mood) => {
       if (!userEmail) return;
@@ -99,7 +120,6 @@ export default function MoodDetection() {
           console.error("Failed to save mood history", err);
       }
   };
-
   // Fetch playlist based on mood
   const handleGetPlaylist = async () => {
       if(!confirmedMood) return;
@@ -110,7 +130,6 @@ export default function MoodDetection() {
           mood: confirmedMood
         });
         console.log("Data received from server:", res.data);
-
         setPlaylist(res.data);
         sessionStorage.setItem("moodify_playlist", JSON.stringify(res.data));
         setActiveTab("all");
@@ -122,7 +141,26 @@ export default function MoodDetection() {
           setPlaylistLoading(false);
       }
   };
-
+  // Shuffle / refresh songs for the current mood
+  const handleShuffleSongs = async () => {
+      if (!confirmedMood) return;
+      setShuffling(true);
+      try {
+        const res = await axios.post("http://127.0.0.1:5000/user/get-playlist", {
+          mood: confirmedMood
+        });
+        setPlaylist(res.data);
+        sessionStorage.setItem("moodify_playlist", JSON.stringify(res.data));
+        setActiveTab("all");
+        fetchLikedSongIds();
+        showToast("🔀 New songs loaded!");
+      } catch (err) {
+          console.error("Error shuffling playlist", err);
+          showToast("Failed to load new songs.", true);
+      } finally {
+          setShuffling(false);
+      }
+  };
   const fetchLikedSongIds = async () => {
       if (!userEmail) return;
       try {
@@ -135,7 +173,6 @@ export default function MoodDetection() {
           console.error("Failed to fetch liked song IDs:", err);
       }
   };
-
   // Toggle like / unlike for a song
   const handleLikeSong = async (song) => {
       if (!userEmail) {
@@ -143,8 +180,6 @@ export default function MoodDetection() {
           return;
       }
       const songIdStr = String(song.id);
-
-      // Safely extract all fields with fallbacks for missing data
       const payload = {
           email:       userEmail,
           song_id:     songIdStr,
@@ -155,13 +190,10 @@ export default function MoodDetection() {
           song_source: song.is_api ? "jamendo" : "local",
           file_path:   song.file_path || ""
       };
-
       console.log("Like payload:", payload);
-
       try {
           const res = await axios.post("http://127.0.0.1:5000/user/like-song", payload);
           console.log("Like response:", res.data);
-
           // Update the local liked set 
           setLikedSongIds(prev => {
               const updated = new Set(prev);
@@ -180,7 +212,88 @@ export default function MoodDetection() {
           showToast("Error: " + errMsg, true);
       }
   };
-
+  //OPEN PLAYLIST 
+  const handleOpenPlaylistModal = async (song) => {
+      if (showPlaylistModal && modalSong && String(modalSong.id) === String(song.id)) {
+          handleClosePlaylistModal();
+          return;
+      }
+      setModalSong(song);
+      setShowPlaylistModal(true);
+      setNewPlaylistName("");
+      setCreatingPlaylist(false);
+      setPlaylistsLoading(true);
+      try {
+          const res = await axios.post("http://127.0.0.1:5000/user/get-playlists", {
+              email: userEmail
+          });
+          setUserPlaylists(res.data);
+      } catch (err) {
+          console.error("Failed to fetch playlists:", err);
+      } finally {
+          setPlaylistsLoading(false);
+      }
+  };
+  // Close playlist model 
+  const handleClosePlaylistModal = () => {
+      setShowPlaylistModal(false);
+      setModalSong(null);
+      setNewPlaylistName("");
+      setCreatingPlaylist(false);
+  };
+  // Create a new playlist and add song to it
+  const handleCreatePlaylist = async () => {
+      if (!newPlaylistName.trim()) return;
+      setCreatingPlaylist(true);
+      try {
+          const res = await axios.post("http://127.0.0.1:5000/user/create-playlist", {
+              email: userEmail,
+              name: newPlaylistName.trim()
+          });
+          const newPlaylistId = res.data.id;
+          // Immediately add the song to the newly created playlist
+          await handleAddSongToPlaylist(newPlaylistId, true);
+          // Refresh playlists list
+          const refreshed = await axios.post("http://127.0.0.1:5000/user/get-playlists", {
+              email: userEmail
+          });
+          setUserPlaylists(refreshed.data);
+          setNewPlaylistName("");
+      } catch (err) {
+          console.error("Failed to create playlist:", err);
+          showToast("Failed to create playlist.", true);
+      } finally {
+          setCreatingPlaylist(false);
+      }
+  };
+  // Add current modal song to a given playlist
+  const handleAddSongToPlaylist = async (playlistId, silent = false) => {
+      if (!modalSong) return;
+      setAddingToPlaylistId(playlistId);
+      const payload = {
+          playlist_id:  playlistId,
+          song_id:      String(modalSong.id),
+          song_title:   modalSong.title  || "Unknown Title",
+          song_artist:  modalSong.artist || "Unknown Artist",
+          song_mood:    modalSong.mood   || confirmedMood || "Unknown",
+          song_image:   modalSong.image  || null,
+          song_source:  modalSong.is_api ? "jamendo" : "local",
+          file_path:    modalSong.file_path || ""
+      };
+      try {
+          await axios.post("http://127.0.0.1:5000/user/add-to-playlist", payload);
+          if (!silent) {
+              showToast("✓ Added to playlist!");
+              handleClosePlaylistModal(); 
+          }
+      } catch (err) {
+          console.error("Failed to add song to playlist:", err);
+          if (!silent) showToast("Failed to add song.", true);
+      } finally {
+          setAddingToPlaylistId(null);
+      }
+  };
+  // ──
   useEffect(() => {
     let interval;
     if (isDetecting && !confirmedMood) {
@@ -216,7 +329,6 @@ export default function MoodDetection() {
     }
     return () => clearInterval(interval);
   }, [isDetecting, confirmedMood]); 
-
   const handleStartDetection = async () => {
     try {
       await axios.post("http://127.0.0.1:5000/start_detection");
@@ -227,7 +339,6 @@ export default function MoodDetection() {
     setIsDetecting(true);
     startFramePolling();
   };
-
   // Reset logic to allow detecting again.
   const handleDetectAgain = async () => {
       sessionStorage.removeItem("moodify_confirmed_mood");
@@ -247,15 +358,18 @@ export default function MoodDetection() {
       }
       startFramePolling();
   };
-
   // Filter playlist based on active tab
   const filteredPlaylist = playlist.filter((song) => {
     if (activeTab === "all") return true;
     if (activeTab === "ai") return song.is_api === true;
-    if (activeTab === "admin") return song.is_api === false;
+    if (activeTab === "admin") {
+      if (song.is_api === true) return false;
+      // Apply language filter; "All" shows every admin song
+      if (languageFilter === "All") return true;
+      return (song.language || "").trim().toLowerCase() === languageFilter.trim().toLowerCase();
+    }
     return true;
   });
-
   // SVG heart icons 
   const HeartFilled = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="#e74c3c" stroke="#e74c3c" strokeWidth="1.5">
@@ -267,11 +381,147 @@ export default function MoodDetection() {
       <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
     </svg>
   );
-
+  // SVG plus icon for add-to-playlist button
+  const PlusIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="12" y1="5" x2="12" y2="19" />
+      <line x1="5" y1="12" x2="19" y2="12" />
+    </svg>
+  );
+  // SVG shuffle/refresh icon for the shuffle button
+  const ShuffleIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="16 3 21 3 21 8"/>
+      <line x1="4" y1="20" x2="21" y2="3"/>
+      <polyline points="21 16 21 21 16 21"/>
+      <line x1="15" y1="15" x2="21" y2="21"/>
+    </svg>
+  );
+  // INLINE PLAYLIST DRAWER 
+  const PlaylistDrawer = ({ song }) => {
+    const isOpen = showPlaylistModal && modalSong && String(modalSong.id) === String(song.id);
+    if (!isOpen) return null;
+    const btnDisabled = (id) => addingToPlaylistId === id;
+    return (
+      <div style={{
+        background: "#fff",
+        border: "2px solid #e8d5f5",
+        borderTop: "none",
+        borderRadius: "0 0 14px 14px",
+        padding: "16px 20px 8px",
+        boxShadow: "0 10px 30px rgba(214,63,181,0.12)",
+        animation: "drawerSlideDown 0.22s ease",
+        marginBottom: "6px"
+      }}>
+        {/* Song being added — info strip */}
+        <div style={{display:"flex", alignItems:"center", gap:"10px", marginBottom:"14px", paddingBottom:"12px", borderBottom:"1px solid #f5f5f5"}}>
+          <span style={{fontSize:"0.72rem", fontWeight:700, color:"#d63fb5", textTransform:"uppercase", letterSpacing:"0.8px"}}>Adding to playlist</span>
+          <span style={{fontSize:"0.82rem", fontWeight:600, color:"#333", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", flex:1}}>
+            {song.title || "Unknown Title"}
+          </span>
+          <button
+            onClick={handleClosePlaylistModal}
+            style={{background:"#f5f5f5", border:"none", borderRadius:"50%", width:"26px", height:"26px", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"0.75rem", color:"#666", flexShrink:0, fontWeight:700}}
+          >✕</button>
+        </div>
+        {/* Create new playlist row */}
+        <p style={{margin:"0 0 8px 0", fontSize:"0.78rem", fontWeight:700, color:"#888", textTransform:"uppercase", letterSpacing:"0.6px"}}>Create new</p>
+        <div style={{display:"flex", gap:"8px", marginBottom:"14px"}}>
+          <input
+            type="text"
+            placeholder="New playlist name..."
+            value={newPlaylistName}
+            onChange={e => setNewPlaylistName(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter") handleCreatePlaylist(); }}
+            className="playlist-name-input"
+          />
+          <button
+            onClick={handleCreatePlaylist}
+            disabled={creatingPlaylist || !newPlaylistName.trim()}
+            style={{
+              padding:"9px 14px",
+              background: (creatingPlaylist || !newPlaylistName.trim()) ? "#f0f0f0" : "linear-gradient(135deg,#e05c2a,#d63fb5)",
+              color: (creatingPlaylist || !newPlaylistName.trim()) ? "#bbb" : "#fff",
+              border:"none", borderRadius:"8px", fontSize:"0.82rem", fontWeight:700,
+              cursor: (creatingPlaylist || !newPlaylistName.trim()) ? "not-allowed" : "pointer",
+              whiteSpace:"nowrap", fontFamily:"inherit", flexShrink:0, transition:"all 0.2s"
+            }}
+          >
+            {creatingPlaylist ? "Creating..." : "+ Create & Add"}
+          </button>
+        </div>
+        {/* Divider */}
+        {userPlaylists.length > 0 && (
+          <div style={{display:"flex", alignItems:"center", gap:"8px", margin:"0 0 10px 0", color:"#ccc", fontSize:"0.72rem", fontWeight:700, textTransform:"uppercase", letterSpacing:"0.6px"}}>
+            <div style={{flex:1, height:"1px", background:"#f0f0f0"}}></div>
+            <span>or add to existing</span>
+            <div style={{flex:1, height:"1px", background:"#f0f0f0"}}></div>
+          </div>
+        )}
+        {/* Existing playlists */}
+        <div style={{maxHeight:"200px", overflowY:"auto"}}>
+          {playlistsLoading ? (
+            <p style={{textAlign:"center", color:"#bbb", fontSize:"0.85rem", padding:"14px 0", margin:0}}>Loading your playlists...</p>
+          ) : userPlaylists.length === 0 ? (
+            <p style={{textAlign:"center", color:"#bbb", fontSize:"0.85rem", padding:"14px 0", margin:0}}>No playlists yet — create one above!</p>
+          ) : (
+            userPlaylists.map(pl => (
+              <button
+                key={pl.id}
+                onClick={() => handleAddSongToPlaylist(pl.id)}
+                disabled={btnDisabled(pl.id)}
+                style={{
+                  width:"100%", display:"flex", alignItems:"center", gap:"10px",
+                  padding:"9px 8px", background:"none", border:"none",
+                  borderBottom:"1px solid #f8f8f8", cursor: btnDisabled(pl.id) ? "not-allowed" : "pointer",
+                  textAlign:"left", borderRadius:"6px", transition:"background 0.15s",
+                  fontFamily:"inherit", opacity: btnDisabled(pl.id) ? 0.55 : 1
+                }}
+                onMouseEnter={e => { if (!btnDisabled(pl.id)) e.currentTarget.style.background = "#fdf0ff"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "none"; }}
+              >
+                {/* Playlist cover or gradient icon */}
+                <div style={{width:"36px", height:"36px", borderRadius:"7px", background:"linear-gradient(135deg,#f5e6ff,#ffe6f0)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"1.1rem", flexShrink:0, overflow:"hidden"}}>
+                  {pl.image
+                    ? <img src={pl.image} alt={pl.name} style={{width:"100%",height:"100%",objectFit:"cover",borderRadius:"7px"}} />
+                    : "♪"
+                  }
+                </div>
+                <span style={{flex:1, fontSize:"0.9rem", fontWeight:600, color:"#222", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis"}}>{pl.name}</span>
+                <span style={{fontSize:"0.78rem", fontWeight:700, color: btnDisabled(pl.id) ? "#aaa" : "#d63fb5", background: btnDisabled(pl.id) ? "#f5f5f5" : "rgba(214,63,181,0.09)", padding:"3px 10px", borderRadius:"20px", flexShrink:0, transition:"all 0.15s"}}>
+                  {btnDisabled(pl.id) ? "Adding..." : "Add"}
+                </span>
+              </button>
+            ))
+          )}
+        </div>
+        {/* View all playlists footer */}
+        <button
+          onClick={() => { handleClosePlaylistModal(); navigate("/playlists"); }}
+          style={{display:"block", width:"100%", padding:"10px", border:"none", borderTop:"1px solid #f5f5f5", background:"none", color:"#bbb", fontSize:"0.82rem", fontWeight:600, cursor:"pointer", textAlign:"center", marginTop:"8px", fontFamily:"inherit", transition:"color 0.2s"}}
+          onMouseEnter={e => { e.currentTarget.style.color = "#d63fb5"; }}
+          onMouseLeave={e => { e.currentTarget.style.color = "#bbb"; }}
+        >
+          ♪ View All My Playlists
+        </button>
+      </div>
+    );
+  };
+  // ──
   return (
     <div className="music-home-container detect-page-bg">
-
-      {/* TOAST NOTIFICATION — shows like/unlike feedback */}
+      {/* Keyframe for the drawer slide-down animation */}
+      <style>{`
+        @keyframes drawerSlideDown {
+          from { opacity: 0; transform: translateY(-8px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(360deg); }
+        }
+      `}</style>
+      {/* shows like/unlike feedback */}
       {likeToast && (
         <div style={{
           position: "fixed",
@@ -292,9 +542,7 @@ export default function MoodDetection() {
           {likeToast.msg}
         </div>
       )}
-
       <div className={`detect-hero-panel ${isDetecting ? "detect-hero-compact" : ""}`}>
-
         <nav className="music-nav detect-hero-nav" style={{position: "relative", zIndex: 200}}>
           <div className="music-logo" onClick={() => navigate("/home")} style={{cursor:"pointer"}}>Moodify</div>
           <div className="profile-container" style={{position:"relative", zIndex: 200}}>
@@ -304,25 +552,21 @@ export default function MoodDetection() {
               <div className="profile-dropdown" style={{right:0, left:"auto", zIndex: 300}}>
                 <p onClick={() => navigate("/home")}>Home</p>
                 <p onClick={() => navigate("/dashboard")}>Dashboard</p>
+                <p onClick={() => navigate("/playlists")}>Playlists</p>
                 <p onClick={() => navigate("/settings")}>Settings</p>
                 <p onClick={handleLogout} className="dropdown-logout">Logout</p>
               </div>
             )}
           </div>
         </nav>
-
-        {/* Diagonal right accent */}
         <div className="detect-diagonal-overlay"></div>
-
         {/* Animated scan box on right */}
         <div className="detect-scan-box">
           <div className="detect-scan-corner detect-tl"></div>
           <div className="detect-scan-corner detect-tr"></div>
           <div className="detect-scan-corner detect-bl"></div>
           <div className="detect-scan-corner detect-br"></div>
-          {/* <div className="detect-scan-face">😐</div> */}
         </div>
-
         {!isDetecting && (
           <div className="detect-hero-content">
             <div className="detect-hero-badge">AI Powered Emotion Recognition</div>
@@ -349,19 +593,18 @@ export default function MoodDetection() {
             </div>
             <div style={{display:"flex", gap:"14px", flexWrap:"wrap"}}>
               <button className="detect-start-btn" onClick={handleStartDetection}>
-                ✦ Start Detection
+                Start Detection
               </button>
               <button className="detect-back-btn" onClick={() => navigate("/home")}>
-                ← Back to Home
+                Back to Home
               </button>
             </div>
           </div>
         )}
-
         {/* Compact bar when camera active */}
         {isDetecting && (
           <div className="detect-hero-compact-bar">
-            <button className="back-link-btn" onClick={() => navigate("/home")}>← Back to Home</button>
+            <button className="back-link-btn" onClick={() => navigate("/home")}> Back to Home</button>
             <div className="detect-compact-title">
               <span className="detect-live-dot"></span>
               Mood Detection — Live
@@ -369,7 +612,6 @@ export default function MoodDetection() {
           </div>
         )}
       </div>
-
       {/* CAMERA + RESULTS */}
       {isDetecting && (
         <div className="music-home-content detection-wrapper">
@@ -384,14 +626,13 @@ export default function MoodDetection() {
                           justifyContent:"center", flexDirection:"column", gap:"10px",
                           borderRadius:"16px", color:"#fff"
                         }}>
-                          <div style={{fontSize:"3rem"}}>✅</div>
+                          <div style={{fontSize:"3rem"}}>📷</div>
                           <p style={{margin:0, fontWeight:"600", fontSize:"1.1rem"}}>Mood Captured!</p>
-                          <p style={{margin:0, color:"#aaa", fontSize:"0.85rem"}}>Camera stopped to save resources</p>
                         </div>
                     ) : (
-                        frameSrc ? (
-                            <img src={frameSrc} alt="Live Emotion Feed" className="camera-feed"
-                                style={{width:"100%", height:"100%", objectFit:"cover", borderRadius:"16px"}} />
+                        true ? (
+                            <img ref={cameraImgRef} alt="Live Emotion Feed" className="camera-feed"
+                                style={{width:"100%", height:"100%", objectFit:"cover", borderRadius:"16px", display:"block"}} />
                         ) : (
                             <div style={{
                               width:"100%", height:"100%", minHeight:"300px",
@@ -427,14 +668,13 @@ export default function MoodDetection() {
                         <>
                             <p style={{fontSize:"1rem", color:"#666"}}>Detected Mood:</p>
                             <h2 className="detected-mood-text">{confirmedMood}</h2>
-
                             <button className="recommendation-btn" onClick={handleGetPlaylist} disabled={playlistLoading}>
-                                {playlistLoading ? "Loading Tracks..." : "🎵 Get Playlist"}
+                                {playlistLoading ? "Loading Tracks..." : "♫ Get Playlist"}
                             </button>
                             <button className="music-card-btn"
                                 style={{marginTop:"15px", width:"100%", border:"1px solid #ddd"}}
                                 onClick={handleDetectAgain}>
-                                🔄 Detect Mood Again
+                                🔁 Detect Mood Again
                             </button>
                         </>
                     ) : (
@@ -444,52 +684,146 @@ export default function MoodDetection() {
                 </div>
             </div>
           </div>
-
           {/* PLAYLIST SECTION */}
           {playlist.length > 0 && (
               <div className="music-card full-width-card" style={{marginTop:"40px", textAlign:"left", animation:"fadeIn 1s ease"}}>
-                  <h3>Recommended {confirmedMood} Songs</h3>
+                  {/* Playlist header row — title on left, shuffle button on top right */}
+                  <div style={{display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:"4px"}}>
+                    <h3 style={{margin:0}}>Recommended {confirmedMood} Songs</h3>
+                    {/* Shuffle button — fetches a new random set of songs for the same mood */}
+                    <button
+                      onClick={handleShuffleSongs}
+                      disabled={shuffling}
+                      title="Get new random songs for this mood"
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "7px",
+                        padding: "9px 18px",
+                        background: shuffling ? "#f0f0f0" : "linear-gradient(135deg, #e05c2a, #d63fb5)",
+                        color: shuffling ? "#aaa" : "#fff",
+                        border: "none",
+                        borderRadius: "30px",
+                        fontSize: "0.85rem",
+                        fontWeight: 700,
+                        cursor: shuffling ? "not-allowed" : "pointer",
+                        fontFamily: "inherit",
+                        boxShadow: shuffling ? "none" : "0 3px 12px rgba(214,63,181,0.28)",
+                        transition: "all 0.2s",
+                        flexShrink: 0
+                      }}
+                      onMouseEnter={e => { if (!shuffling) e.currentTarget.style.opacity = "0.88"; }}
+                      onMouseLeave={e => { e.currentTarget.style.opacity = "1"; }}
+                    >
+                      {/* Spin the icon while loading */}
+                      <span style={{ display:"inline-flex", animation: shuffling ? "spin 0.8s linear infinite" : "none" }}>
+                        <ShuffleIcon />
+                      </span>
+                      {shuffling ? "Loading..." : "Shuffle Songs"}
+                    </button>
+                  </div>
                   <p style={{color:"#666", marginBottom:"20px"}}>Based on your detected emotion, here are some tracks to listen.</p>
                   {/* PLAYLIST TAB FILTER */}
-                  <div className="playlist-tabs">
-                      <button className={`playlist-tab-btn ${activeTab==="all"?"active":""}`} onClick={() => setActiveTab("all")}>🎵 All Tracks</button>
-                      <button className={`playlist-tab-btn ${activeTab==="ai"?"active":""}`} onClick={() => setActiveTab("ai")}>✨ Smart Picks</button>
-                      <button className={`playlist-tab-btn ${activeTab==="admin"?"active":""}`} onClick={() => setActiveTab("admin")}>🎧 Curator's Choice</button>
+                  <div className="playlist-tabs" style={{display:"flex", alignItems:"center", flexWrap:"wrap", gap:"8px"}}>
+                      <button className={`playlist-tab-btn ${activeTab==="all"?"active":""}`} onClick={() => { setActiveTab("all"); setLanguageFilter("All"); }}>
+                        🎵 All Tracks</button>
+                      <button className={`playlist-tab-btn ${activeTab==="ai"?"active":""}`} onClick={() => { setActiveTab("ai"); setLanguageFilter("All"); }}>
+                        ✨ Smart Picks</button>
+                      <button className={`playlist-tab-btn ${activeTab==="admin"?"active":""}`} onClick={() => { setActiveTab("admin"); setLanguageFilter("All"); }}>
+                        🎧 Curator's Choice</button>
+                      {/* Language dropdown — only visible on Curator's Choice tab */}
+                      {activeTab === "admin" && (
+                        <select
+                          value={languageFilter}
+                          onChange={(e) => setLanguageFilter(e.target.value)}
+                          style={{
+                            marginLeft: "10px",
+                            padding: "8px 20px 8px 16px",
+                            borderRadius: "20px",
+                            minWidth: "140px",
+                            border: "1px solid #ddd",
+                            background: "#fff",
+                            fontSize: "0.85rem",
+                            fontWeight: 600,
+                            color: "#444",
+                            cursor: "pointer",
+                            outline: "none",
+                            fontFamily: "inherit",
+                            boxShadow: "0 1px 4px rgba(0,0,0,0.08)"
+                          }}
+                        >
+                          <option value="All">All</option>
+                          <option value="English">English</option>
+                          <option value="Hindi">Hindi</option>
+                          <option value="Nepali">Nepali</option>
+                        </select>
+                      )}
                   </div>
                   {/* FILTERED SONG LIST */}
                   <div className="playlist-grid">
                       {filteredPlaylist.length > 0 ? (
-                          filteredPlaylist.map((song, index) => (
-                              <div key={index} className="song-item" style={{display:"flex", justifyContent:"space-between", alignItems:"center", padding:"15px", borderBottom:"1px solid #eee"}}>
-                                  <div style={{display:"flex", alignItems:"center", gap:"15px"}}>
-                                      {song.image ? (
-                                          <img src={song.image} alt="album" style={{width:"55px", height:"55px", borderRadius:"8px", objectFit:"cover"}} />
-                                      ) : (
-                                          <div style={{width:"55px", height:"55px", background:"#eee", borderRadius:"8px", display:"flex", justifyContent:"center", alignItems:"center", fontSize:"1.5rem"}}>🎵</div>
-                                      )}
-                                      <div>
-                                          <h4 style={{margin:0, color:"#333"}}>{song.title || "Unknown Title"}</h4>
-                                          <p style={{margin:0, color:"#888", fontSize:"0.85rem"}}>
-                                              {song.artist || "Unknown Artist"} • {song.is_api ? "Free Jamendo Library" : "Local Admin Song"}
-                                          </p>
-                                      </div>
-                                  </div>
-                                  {/* AUDIO + LIKE BUTTON */}
-                                  <div style={{display:"flex", alignItems:"center", gap:"12px"}}>
-                                      <audio controls src={song.is_api ? song.file_path : `http://127.0.0.1:5000/songs/${song.file_path}`} style={{height:"35px"}}></audio>
-                                      <button
-                                          className={`like-btn ${likedSongIds.has(String(song.id)) ? "liked" : ""}`}
-                                          onClick={() => handleLikeSong(song)}
-                                          title={likedSongIds.has(String(song.id)) ? "Unlike this song" : "Like this song"}
-                                      >
-                                          {likedSongIds.has(String(song.id)) ? <HeartFilled /> : <HeartOutline />}
-                                      </button>
-                                  </div>
+                          filteredPlaylist.map((song, index) => {
+                            const drawerOpen = showPlaylistModal && modalSong && String(modalSong.id) === String(song.id);
+                            return (
+                              <div key={index}>
+                                <div
+                                  className="song-item"
+                                  style={{
+                                    display:"flex", justifyContent:"space-between", alignItems:"center",
+                                    padding:"15px",
+                                    borderBottom: drawerOpen ? "none" : "1px solid #eee",
+                                    background: drawerOpen ? "#fdf8ff" : "transparent",
+                                    borderRadius: drawerOpen ? "10px 10px 0 0" : "0",
+                                    border: drawerOpen ? "2px solid #e8d5f5" : undefined,
+                                    transition:"background 0.2s, border 0.2s"
+                                  }}
+                                >
+                                    <div style={{display:"flex", alignItems:"center", gap:"15px"}}>
+                                        {song.image ? (
+                                            <img src={song.image} alt="album" style={{width:"55px", height:"55px", borderRadius:"8px", objectFit:"cover"}} />
+                                        ) : (
+                                            <div style={{width:"55px", height:"55px", background:"#eee", borderRadius:"8px", display:"flex", justifyContent:"center", alignItems:"center", fontSize:"1.5rem"}}>♪</div>
+                                        )}
+                                        <div>
+                                            <h4 style={{margin:0, color:"#333"}}>{song.title || "Unknown Title"}</h4>
+                                            <p style={{margin:0, color:"#888", fontSize:"0.85rem"}}>
+                                                {song.artist || "Unknown Artist"} • {song.is_api ? "Free Jamendo Library" : "Local Admin Song"}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    {/* AUDIO + ADD TO PLAYLIST BUTTON + LIKE BUTTON */}
+                                    <div style={{display:"flex", alignItems:"center", gap:"12px"}}>
+                                        <audio controls src={song.is_api ? song.file_path : `http://127.0.0.1:5000/songs/${song.file_path}`} style={{height:"35px"}}></audio>
+                                        {/* ADD TO PLAYLIST BUTTON — turns pink/active when drawer is open for this song */}
+                                        <button
+                                            className="add-to-playlist-btn"
+                                            onClick={() => handleOpenPlaylistModal(song)}
+                                            title={drawerOpen ? "Close playlist picker" : "Add to playlist"}
+                                            style={{
+                                              color: drawerOpen ? "#d63fb5" : undefined,
+                                              borderColor: drawerOpen ? "#d63fb5" : undefined,
+                                              background: drawerOpen ? "rgba(214,63,181,0.10)" : undefined
+                                            }}
+                                        >
+                                            <PlusIcon />
+                                        </button>
+                                        {/* LIKE BUTTON */}
+                                        <button
+                                            className={`like-btn ${likedSongIds.has(String(song.id)) ? "liked" : ""}`}
+                                            onClick={() => handleLikeSong(song)}
+                                            title={likedSongIds.has(String(song.id)) ? "Unlike this song" : "Like this song"}
+                                        >
+                                            {likedSongIds.has(String(song.id)) ? <HeartFilled /> : <HeartOutline />}
+                                        </button>
+                                    </div>
+                                </div>
+                                <PlaylistDrawer song={song} />
                               </div>
-                          ))
+                            );
+                          })
                       ) : (
                           <div style={{textAlign:"center", padding:"40px", color:"#aaa"}}>
-                              <div style={{fontSize:"2.5rem", marginBottom:"10px"}}>🎶</div>
+                              <div style={{fontSize:"2.5rem", marginBottom:"10px"}}>♪</div>
                               <p style={{fontWeight:"600", color:"#888"}}>No tracks in this category yet.</p>
                               <p style={{fontSize:"0.85rem"}}>Try switching to another tab or refresh the playlist.</p>
                           </div>
@@ -499,8 +833,8 @@ export default function MoodDetection() {
           )}
         </div>
       )}
-
       <Footer />
     </div>
   );
 }
+
