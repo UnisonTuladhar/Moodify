@@ -94,13 +94,6 @@ const Footer = () => {
         </div>
 
         <div className="footer-bottom">
-          <div className="footer-legal">
-            <span>Legal</span>
-            <span>Safety & Privacy Center</span>
-            <span>Privacy Policy</span>
-            <span>Cookies</span>
-            <span>Accessibility</span>
-          </div>
           <div className="footer-copyright">
             © 2025 Moodify 
           </div>
