@@ -4,7 +4,15 @@
     width: 100vw;
     background-color: #f4f7f6;
     font-family: 'Segoe UI', sans-serif;
-    overflow-x: hidden;
+    overflow-x: clip;
+    padding-top: 70px;
+}
+
+.music-home-container:has(.hero-panel),
+.music-home-container:has(.admin-hero-panel),
+.music-home-container:has(.detect-hero-panel) {
+    padding-top: 0;
+    overflow-x: unset;
 }
 
 /* NAVIGATION */
@@ -15,6 +23,23 @@
     padding: 15px 60px;
     background: white;
     box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    z-index: 1000;
+    box-sizing: border-box;
+}
+
+.music-nav.fixed-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    z-index: 1000;
+    box-sizing: border-box;
 }
 
 .music-logo {
@@ -83,7 +108,7 @@
     box-shadow: 0 10px 30px rgba(0,0,0,0.05);
     border: 1px solid transparent;
     transition: 0.3s;
-    overflow: hidden; 
+    overflow: hidden;
 }
 
 .music-input-group {
@@ -109,7 +134,7 @@
     font-size: 1rem;
     outline: none;
     transition: 0.3s;
-    box-sizing: border-box; 
+    box-sizing: border-box;
 }
 
 .music-input-group input:focus,

@@ -542,30 +542,96 @@ export default function MoodDetection() {
           {likeToast.msg}
         </div>
       )}
+      {/* NAV MOVED OUTSIDE detect-hero-panel so position:fixed works correctly */}
+      <nav className="music-nav detect-hero-nav">
+        <div className="music-logo" onClick={() => navigate("/home")} style={{cursor:"pointer"}}>Moodify</div>
+        <div className="profile-container" style={{position:"relative", zIndex: 200}}>
+          <img src={profileImg} alt="profile" className="profile-icon-img"
+            onClick={() => setShowDropdown(!showDropdown)} />
+          {showDropdown && (
+            <div className="profile-dropdown" style={{right:0, left:"auto", zIndex: 300}}>
+              <p onClick={() => navigate("/home")}>Home</p>
+              <p onClick={() => navigate("/dashboard")}>Dashboard</p>
+              <p onClick={() => navigate("/playlists")}>Playlists</p>
+              <p onClick={() => navigate("/settings")}>Settings</p>
+              <p onClick={handleLogout} className="dropdown-logout">Logout</p>
+            </div>
+          )}
+        </div>
+      </nav>
       <div className={`detect-hero-panel ${isDetecting ? "detect-hero-compact" : ""}`}>
-        <nav className="music-nav detect-hero-nav" style={{position: "relative", zIndex: 200}}>
-          <div className="music-logo" onClick={() => navigate("/home")} style={{cursor:"pointer"}}>Moodify</div>
-          <div className="profile-container" style={{position:"relative", zIndex: 200}}>
-            <img src={profileImg} alt="profile" className="profile-icon-img"
-              onClick={() => setShowDropdown(!showDropdown)} />
-            {showDropdown && (
-              <div className="profile-dropdown" style={{right:0, left:"auto", zIndex: 300}}>
-                <p onClick={() => navigate("/home")}>Home</p>
-                <p onClick={() => navigate("/dashboard")}>Dashboard</p>
-                <p onClick={() => navigate("/playlists")}>Playlists</p>
-                <p onClick={() => navigate("/settings")}>Settings</p>
-                <p onClick={handleLogout} className="dropdown-logout">Logout</p>
-              </div>
-            )}
-          </div>
-        </nav>
         <div className="detect-diagonal-overlay"></div>
-        {/* Animated scan box on right */}
         <div className="detect-scan-box">
           <div className="detect-scan-corner detect-tl"></div>
           <div className="detect-scan-corner detect-tr"></div>
           <div className="detect-scan-corner detect-bl"></div>
           <div className="detect-scan-corner detect-br"></div>
+          <div className="hero-scan-face-inner">
+            <svg viewBox="0 0 200 220" width="200" height="220" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="detectScanGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#ff4e00" stopOpacity="0" />
+                  <stop offset="50%" stopColor="#ec008c" stopOpacity="1" />
+                  <stop offset="100%" stopColor="#ff4e00" stopOpacity="0" />
+                </linearGradient>
+                <linearGradient id="detectMusicGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#ff4e00" />
+                  <stop offset="100%" stopColor="#ec008c" />
+                </linearGradient>
+                <linearGradient id="detectBgGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#ff4e00" stopOpacity="0.08" />
+                  <stop offset="100%" stopColor="#ec008c" stopOpacity="0.05" />
+                </linearGradient>
+              </defs>
+              {/* Soft background circle */}
+              <circle cx="100" cy="100" r="72" fill="url(#detectBgGlow)" stroke="#ec008c" strokeWidth="1" strokeDasharray="3 4" opacity="0.5">
+                <animateTransform attributeName="transform" type="rotate" values="0 100 100;360 100 100" dur="18s" repeatCount="indefinite" />
+              </circle>
+              {/* Lucide music note icon */}
+                <circle cx="100" cy="105" r="45" fill="none" stroke="url(#detectMusicGrad)" strokeWidth="6" strokeLinecap="round" />
+                {/* Eyes */}
+                <circle cx="84" cy="95" r="5" fill="url(#detectMusicGrad)" />
+                <circle cx="116" cy="95" r="5" fill="url(#detectMusicGrad)" />
+                {/* Smile */}
+                <path d="M82 115 Q100 132 118 115" fill="none" stroke="url(#detectMusicGrad)" strokeWidth="5.5" strokeLinecap="round" />
+                {/* Pulsing eye left */}
+                <circle cx="84" cy="95" r="5" fill="#ff4e00" opacity="0.6">
+                  <animate attributeName="opacity" values="0.3;0.9;0.3" dur="2s" begin="0s" repeatCount="indefinite" />
+                  <animate attributeName="r" values="4;6.5;4" dur="2s" begin="0s" repeatCount="indefinite" />
+                </circle>
+                {/* Pulsing eye right */}
+                <circle cx="116" cy="95" r="5" fill="#ec008c" opacity="0.6">
+                  <animate attributeName="opacity" values="0.3;0.9;0.3" dur="2s" begin="0.5s" repeatCount="indefinite" />
+                  <animate attributeName="r" values="4;6.5;4" dur="2s" begin="0.5s" repeatCount="indefinite" />
+                </circle>
+              {/* Sound wave lines — left */}
+              <line x1="58" y1="90" x2="68" y2="90" stroke="#ff4e00" strokeWidth="1.5" strokeLinecap="round" opacity="0.5">
+                <animate attributeName="opacity" values="0.2;0.8;0.2" dur="1.2s" begin="0s" repeatCount="indefinite" />
+              </line>
+              <line x1="54" y1="100" x2="66" y2="100" stroke="#ff4e00" strokeWidth="1.5" strokeLinecap="round" opacity="0.5">
+                <animate attributeName="opacity" values="0.2;0.8;0.2" dur="1.2s" begin="0.15s" repeatCount="indefinite" />
+              </line>
+              <line x1="58" y1="110" x2="68" y2="110" stroke="#ff4e00" strokeWidth="1.5" strokeLinecap="round" opacity="0.5">
+                <animate attributeName="opacity" values="0.2;0.8;0.2" dur="1.2s" begin="0.3s" repeatCount="indefinite" />
+              </line>
+              {/* Sound wave lines — right */}
+              <line x1="162" y1="90" x2="172" y2="90" stroke="#ec008c" strokeWidth="1.5" strokeLinecap="round" opacity="0.5">
+                <animate attributeName="opacity" values="0.2;0.8;0.2" dur="1.2s" begin="0.6s" repeatCount="indefinite" />
+              </line>
+              <line x1="164" y1="100" x2="176" y2="100" stroke="#ec008c" strokeWidth="1.5" strokeLinecap="round" opacity="0.5">
+                <animate attributeName="opacity" values="0.2;0.8;0.2" dur="1.2s" begin="0.75s" repeatCount="indefinite" />
+              </line>
+              <line x1="162" y1="110" x2="172" y2="110" stroke="#ec008c" strokeWidth="1.5" strokeLinecap="round" opacity="0.5">
+                <animate attributeName="opacity" values="0.2;0.8;0.2" dur="1.2s" begin="0.9s" repeatCount="indefinite" />
+              </line>
+              {/* Scanning sweep line */}
+              <line x1="28" y1="0" x2="172" y2="0" stroke="url(#detectScanGrad)" strokeWidth="1.5" opacity="0.75">
+                <animateTransform attributeName="transform" type="translate" values="0,40;0,175;0,40" dur="2.6s" repeatCount="indefinite" />
+              </line>
+              {/* Label */}
+              <text x="100" y="198" textAnchor="middle" fontSize="9" fontWeight="700" fill="#ec008c" letterSpacing="2.5" opacity="0.75" fontFamily="inherit">MOODIFY</text>
+            </svg>
+          </div>
         </div>
         {!isDetecting && (
           <div className="detect-hero-content">
@@ -837,4 +903,3 @@ export default function MoodDetection() {
     </div>
   );
 }
-

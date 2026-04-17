@@ -100,28 +100,28 @@ export default function AdminHome() {
   };
   return (
     <div className="music-home-container admin-home-bg">
-      <div className="admin-hero-panel" style={{ minHeight: "100vh" }}>
-        <nav className="music-nav admin-hero-nav">
-          <div className="music-logo admin-hero-logo" onClick={() => navigate("/admin-home")} style={{cursor:'pointer'}}>
-            Moodify
-          </div>
-          <div className="profile-container">
-            <img 
-              src={profileImg} 
-              alt="profile" 
-              className="profile-icon-img admin-hero-profile"
-              onClick={() => setShowDropdown(!showDropdown)}
-            />
-            {showDropdown && (
-              <div className="profile-dropdown">
-                <p onClick={() => navigate("/admin-dashboard")}>Dashboard</p>
-                <p onClick={() => navigate("/admin-settings")}>Settings</p>
-                <p onClick={handleLogout} className="dropdown-logout">Logout</p>
-              </div>
-            )}
-          </div>
-        </nav>
+      <nav className="music-nav admin-hero-nav">
+        <div className="music-logo admin-hero-logo" onClick={() => navigate("/admin-home")} style={{cursor:'pointer'}}>
+          Moodify
+        </div>
+        <div className="profile-container">
+          <img 
+            src={profileImg} 
+            alt="profile" 
+            className="profile-icon-img admin-hero-profile"
+            onClick={() => setShowDropdown(!showDropdown)}
+          />
+          {showDropdown && (
+            <div className="profile-dropdown">
+              <p onClick={() => navigate("/admin-dashboard")}>Dashboard</p>
+              <p onClick={() => navigate("/admin-settings")}>Settings</p>
+              <p onClick={handleLogout} className="dropdown-logout">Logout</p>
+            </div>
+          )}
+        </div>
+      </nav>
 
+      <div className="admin-hero-panel" style={{ minHeight: "100vh" }}>
         <div className="admin-diagonal-overlay"></div>
 
         {/* Scan corner brackets */}
@@ -130,6 +130,61 @@ export default function AdminHome() {
           <div className="scan-corner scan-tr"></div>
           <div className="scan-corner scan-bl"></div>
           <div className="scan-corner scan-br"></div>
+          {/* Lucide user-star icon with scan line animation */}
+          <div className="hero-scan-face-inner">
+            <svg viewBox="0 0 200 220" width="200" height="220" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="adminScanGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#ff4e00" stopOpacity="0" />
+                  <stop offset="50%" stopColor="#ec008c" stopOpacity="1" />
+                  <stop offset="100%" stopColor="#ff4e00" stopOpacity="0" />
+                </linearGradient>
+                <linearGradient id="adminIconGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#ff4e00" />
+                  <stop offset="100%" stopColor="#ec008c" />
+                </linearGradient>
+                <linearGradient id="adminBgGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#ff4e00" stopOpacity="0.08" />
+                  <stop offset="100%" stopColor="#ec008c" stopOpacity="0.05" />
+                </linearGradient>
+              </defs>
+              {/* Soft background circle */}
+              <circle cx="100" cy="100" r="72" fill="url(#adminBgGlow)" stroke="#ec008c" strokeWidth="1" strokeDasharray="3 4" opacity="0.5">
+                <animateTransform attributeName="transform" type="rotate" values="0 100 100;360 100 100" dur="18s" repeatCount="indefinite" />
+              </circle>
+              {/* Lucide user-star icon — person head (circle) */}
+              <circle cx="92" cy="68" r="18" fill="none" stroke="url(#adminIconGrad)" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" />
+              {/* Lucide user-star icon — person body (arc) */}
+              <path d="M52 138 C52 118 70 104 92 104 C105 104 117 110 124 120" fill="none" stroke="url(#adminIconGrad)" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" />
+              {/* Lucide user-star icon — star shape */}
+              <polygon
+                points="148,108 152,120 165,120 155,128 159,140 148,132 137,140 141,128 131,120 144,120"
+                fill="none"
+                stroke="url(#adminIconGrad)"
+                strokeWidth="5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              {/* Pulsing dot on star center */}
+              <circle cx="148" cy="124" r="4" fill="#ec008c" opacity="0.7">
+                <animate attributeName="opacity" values="0.3;0.9;0.3" dur="1.8s" begin="0s" repeatCount="indefinite" />
+                <animate attributeName="r" values="3;5;3" dur="1.8s" begin="0s" repeatCount="indefinite" />
+              </circle>
+              {/* Decorative dots — left */}
+              <circle cx="52" cy="90" r="3" fill="#ff4e00" opacity="0.5">
+                <animate attributeName="opacity" values="0.2;0.8;0.2" dur="1.4s" begin="0s" repeatCount="indefinite" />
+              </circle>
+              <circle cx="44" cy="100" r="2.5" fill="#ff4e00" opacity="0.4">
+                <animate attributeName="opacity" values="0.2;0.7;0.2" dur="1.4s" begin="0.2s" repeatCount="indefinite" />
+              </circle>
+              {/* Scanning sweep line */}
+              <line x1="28" y1="0" x2="172" y2="0" stroke="url(#adminScanGrad)" strokeWidth="1.5" opacity="0.75">
+                <animateTransform attributeName="transform" type="translate" values="0,40;0,175;0,40" dur="2.6s" repeatCount="indefinite" />
+              </line>
+              {/* Label */}
+              <text x="100" y="198" textAnchor="middle" fontSize="9" fontWeight="700" fill="#ec008c" letterSpacing="2.5" opacity="0.75" fontFamily="inherit">MOODIFY</text>
+            </svg>
+          </div>
         </div>
 
         <div className="admin-hero-content">

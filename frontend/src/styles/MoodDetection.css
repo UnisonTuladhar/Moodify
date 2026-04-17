@@ -7,10 +7,10 @@
     width: 100%;
     min-height: 100vh;
     background: #ffffff;
-    overflow: visible; 
     display: flex;
     flex-direction: column;
     transition: min-height 0.4s ease;
+    padding-top: 70px;
 }
 
 .detect-hero-panel.detect-hero-compact {
@@ -18,7 +18,6 @@
     height: auto;
 }
 
-/* Diagonal right accent */
 .detect-diagonal-overlay {
     position: absolute;
     top: 0;
@@ -44,7 +43,7 @@
     z-index: 1;
 }
 
-/* Animated scan box — right side */
+/* Animated scan box - right side */
 .detect-scan-box {
     position: absolute;
     top: 50%;
@@ -89,10 +88,15 @@
 }
 
 .detect-hero-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    box-sizing: border-box;
+    z-index: 1000;
     background: #ffffff !important;
     box-shadow: 0 1px 0 rgba(0,0,0,0.07) !important;
-    position: relative;
-    z-index: 200; /* Raised so nav always sits above the compact bar */
     padding: 18px 60px;
 }
 
@@ -104,7 +108,7 @@
     align-items: flex-start;
     justify-content: center;
     flex: 1;
-    padding: 50px 80px 70px 80px;
+    padding: 60px 80px 70px 80px;
     max-width: 660px;
     animation: heroFadeUp 0.9s ease both;
 }
@@ -353,6 +357,8 @@
     font-weight: 800;
     margin: 15px 0;
     background: linear-gradient(90deg, #ff4e00, #ec008c);
+    -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
     text-transform: capitalize;
 }
@@ -448,7 +454,7 @@
 
 .detect-hero-nav .profile-container {
     position: relative !important;
-    z-index: 200 !important; 
+    z-index: 200 !important;
 }
 
 .detect-hero-nav .profile-dropdown {
@@ -530,10 +536,6 @@
     margin-top: 0 !important;
 }
 
-.detect-page-bg {
-    background-color: #f4f6f9 !important;
-}
-
 .music-home-content.detection-wrapper {
     background: #f4f6f9 !important;
 }
@@ -545,18 +547,19 @@
 }
 
 .playlist-name-input {
-  flex: 1;
-  padding: 9px 13px;
-  border: 1.5px solid #e8e8e8;
-  border-radius: 8px;
-  font-size: 0.88rem;
-  outline: none;
-  font-family: inherit;
-  background: #fafafa;
-  min-width: 0;
-  transition: border-color 0.2s, background 0.2s;
+    flex: 1;
+    padding: 9px 13px;
+    border: 1.5px solid #e8e8e8;
+    border-radius: 8px;
+    font-size: 0.88rem;
+    outline: none;
+    font-family: inherit;
+    background: #fafafa;
+    min-width: 0;
+    transition: border-color 0.2s, background 0.2s;
 }
+
 .playlist-name-input:focus {
-  border-color: #d63fb5;
-  background: #fff;
+    border-color: #d63fb5;
+    background: #fff;
 }
