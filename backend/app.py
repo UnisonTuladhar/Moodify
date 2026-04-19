@@ -13,9 +13,13 @@ from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing.image import img_to_array
 from flask_mail import Mail, Message
 import threading
+import logging
 
 app = Flask(__name__)
 CORS(app)
+
+# Suppress Werkzeug's per-request access log lines to keep the console cleaner.
+logging.getLogger('werkzeug').setLevel(logging.WARNING)
 
 # MAIL CONFIGURATION PART 
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
@@ -60,7 +64,7 @@ frame_lock = threading.Lock()
 
 # Counter to throttle AI inference — only run every N frames for speed
 _frame_counter = 0
-AI_INFERENCE_EVERY_N_FRAMES = 3  # Run emotion model every 3rd frame
+AI_INFERENCE_EVERY_N_FRAMES = 3  
 
 try:
     classifier = load_model(MODEL_PATH)
@@ -70,7 +74,6 @@ except Exception as e:
     print(f"Error loading AI components: {e}")
 
 def get_camera():
-    """Open the camera if not already open. Returns the singleton VideoCapture instance."""
     global camera_instance
     if camera_instance is None or not camera_instance.isOpened():
         camera_instance = cv2.VideoCapture(0)
@@ -83,7 +86,6 @@ def get_camera():
     return camera_instance
 
 def release_camera():
-    """Explicitly release the camera hardware so the camera light turns off immediately."""
     global camera_instance, latest_frame_bytes
     if camera_instance is not None and camera_instance.isOpened():
         camera_instance.release()
@@ -93,13 +95,8 @@ def release_camera():
         latest_frame_bytes = None
 
 def camera_capture_loop():
-    """
-    Background thread that continuously reads frames from the camera,
-    runs face detection + emotion inference (throttled), encodes to JPEG,
-    and stores the result in latest_frame_bytes.
-    This decouples capture speed from HTTP request speed.
-    """
     global last_predicted_mood, detection_active, latest_frame_bytes, _frame_counter
+    import time
 
     cam = get_camera()
     last_label = "None"  # Cache the last detected label so we can draw it on skipped frames
@@ -107,8 +104,11 @@ def camera_capture_loop():
     while detection_active:
         success, frame = cam.read()
         if not success:
+            time.sleep(0.05)  # Brief pause before retry to avoid busy-spinning
             continue
 
+        # Mirror the frame so it matches how the user sees themselves
+        frame = cv2.flip(frame, 1)
         _frame_counter += 1
 
         # Resize frame for faster processing
@@ -155,8 +155,9 @@ def camera_capture_loop():
             with frame_lock:
                 latest_frame_bytes = jpeg.tobytes()
 
+        time.sleep(0.05)
+
 def get_frame_from_camera():
-    """Return the latest pre-encoded JPEG frame (non-blocking, thread-safe)."""
     with frame_lock:
         return latest_frame_bytes
 
@@ -1153,4 +1154,6 @@ def delete_feedback():
         db.close()
 
 if __name__ == "__main__":
-    app.run(debug=True, use_reloader=False)
+    # debug=False prevents the Werkzeug reloader from spawning extra processes
+    # and stops the terminal from being flooded with reloader messages.
+    app.run(debug=False, use_reloader=False, host="127.0.0.1", port=5000)
